@@ -57,7 +57,7 @@ static inline mouse_xy_report_t clamp_to_report(float val) {
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
         //calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
-        uint16_t dpi_correction = DEVICE_CPI_PARAM/pointing_device_get_cpi();
+        const float dpi_correction = (float) DEVICE_CPI_PARAM/pointing_device_get_cpi();
         //calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
         const float velocity = dpi_correction*(sqrtf(mouse_report.x*mouse_report.x + mouse_report.y*mouse_report.y))/timer_elapsed32(maccel_timer);
         //calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
