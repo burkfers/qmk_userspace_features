@@ -1,5 +1,5 @@
 /* Copyright 2024 burkfers (@burkfers)
- * Copyright 2023 Wimads (@wimads)
+ * Copyright 2024 Wimads (@wimads)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,7 +60,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         uint16_t dpi_correction = DEVICE_CPI_PARAM/pointing_device_get_cpi();
         //calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
         const float velocity = dpi_correction*(sqrtf(mouse_report.x*mouse_report.x + mouse_report.y*mouse_report.y))/timer_elapsed32(maccel_timer);
-        //calculate mouse acceleration factor: f(dv) = c * (c - 1) * e^(-(dv - b) * a)
+        //calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
         float maccel_factor = maccel_c-(maccel_c-1)*expf(-1*(velocity-maccel_b) * maccel_a);
         if (maccel_factor <= 1) { //cut-off acceleration curve below maccel_factor = 1
             maccel_factor = 1;
@@ -75,7 +75,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         maccel_timer = timer_read32();
 
 #ifdef MACCEL_DEBUG
-        printf("DPI = %4i, factor = %4f, velocity = %4f\n", device_dpi, maccel_factor, velocity);
+        printf("DPI = %4i, factor = %4f, velocity = %4f\n", pointing_device_get_cpi(), maccel_factor, velocity);
 #endif
 
     }
