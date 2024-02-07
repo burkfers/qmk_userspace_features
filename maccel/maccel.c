@@ -19,17 +19,25 @@
 
 static uint32_t maccel_timer;
 
+/* DEVICE_CPI_PARAM
+A device specific parameter required to ensure consistent acceleration behaviour across different devices and user dpi settings.
+ * PMW3360: 900
+ * PMW3389: tbd
+ * Cirque: tbd
+ * Azoteq: tbd
+*///disclaimer: values guesstimated by scientifically questionable emperical testing
+#ifndef DEVICE_CPI_PARAM
+#define DEVICE_CPI_PARAM 900  //device specific cpi scaling parameter
+#endif
 #ifndef MACCEL_STEEPNESS
 #    define MACCEL_STEEPNESS 0.4 // steepness of accel curve
 #endif
 #ifndef MACCEL_OFFSET
-#    define MACCEL_OFFSET 1.1 // X-offset of accel curve
+#    define MACCEL_OFFSET 1.1 // start offset of accel curve
 #endif
 #ifndef MACCEL_LIMIT
-#    define MACCEL_LIMIT 4.5 // maximum scale factor
+#    define MACCEL_LIMIT 4.5 // upper limit of accel curve
 #endif
-
-#define DPI_CORRECTION(dpi) ((900.0f) / dpi)
 
 const float maccel_a = MACCEL_STEEPNESS;
 const float maccel_b = MACCEL_OFFSET;
@@ -48,23 +56,28 @@ static inline mouse_xy_report_t clamp_to_report(float val) {
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
-        // Credit: @wimads
-        const uint16_t device_dpi    = pointing_device_get_cpi();
-        const float    velocity      = DPI_CORRECTION(device_dpi) * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / timer_elapsed32(maccel_timer);
-        float          maccel_factor = maccel_c - (maccel_c - 1) * expf(-1 * (velocity - maccel_b) * maccel_a);
-        if (maccel_factor <= 1) {
+        //calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
+        uint16_t dpi_correction = DEVICE_CPI_PARAM/pointing_device_get_cpi();
+        //calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
+        const float velocity = dpi_correction*(sqrtf(mouse_report.x*mouse_report.x + mouse_report.y*mouse_report.y))/timer_elapsed32(maccel_timer);
+        //calculate mouse acceleration factor: f(dv) = c * (c - 1) * e^(-(dv - b) * a)
+        float maccel_factor = maccel_c-(maccel_c-1)*expf(-1*(velocity-maccel_b) * maccel_a);
+        if (maccel_factor <= 1) { //cut-off acceleration curve below maccel_factor = 1
             maccel_factor = 1;
         }
-        const float x = (mouse_report.x * maccel_factor);
-        const float y = (mouse_report.y * maccel_factor);
-        maccel_timer  = timer_read32();
+        //calculate accelerated delta X and Y values:
+        const float x = (mouse_xy_report_t)(mouse_report.x * maccel_factor);
+        const float y = (mouse_xy_report_t)(mouse_report.y * maccel_factor);
+        //set (clamped) mouse reports for X and Y
+        mouse_report.x = clamp_to_report(x);
+        mouse_report.y = clamp_to_report(y);
+        //record time of last mouse report:
+        maccel_timer = timer_read32();
 
 #ifdef MACCEL_DEBUG
         printf("DPI = %4i, factor = %4f, velocity = %4f\n", device_dpi, maccel_factor, velocity);
 #endif
 
-        mouse_report.x = clamp_to_report(x);
-        mouse_report.y = clamp_to_report(y);
     }
     return mouse_report;
 }
