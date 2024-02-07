@@ -74,9 +74,10 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         //record time of last mouse report:
         maccel_timer = timer_read32();
 
-#ifdef MACCEL_DEBUG
-        printf("DPI = %4i, factor = %4f, velocity = %4f\n", pointing_device_get_cpi(), maccel_factor, velocity);
-#endif
+#ifdef MACCEL_DEBUG //console output for debugging (enable/disable in maccel.h)
+        float accelerated = velocity * maccel_factor; //resulting velocity after acceleration; unneccesary for calculation, but nice for debug console
+        printf("DPI = %4i, factor = %4f, velocity = %4f, accelerated = %4f\n", pointing_device_get_cpi(), maccel_factor, velocity, accelerated);
+#endif //MACCEL_DEBUG
 
     }
     return mouse_report;
