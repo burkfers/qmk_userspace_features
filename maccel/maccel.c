@@ -66,8 +66,8 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
             maccel_factor = 1;
         }
         // calculate accelerated delta X and Y values:
-        const float x = (mouse_xy_report_t)(mouse_report.x * maccel_factor);
-        const float y = (mouse_xy_report_t)(mouse_report.y * maccel_factor);
+        const float x = mouse_report.x * maccel_factor;
+        const float y = mouse_report.y * maccel_factor;
         // set (clamped) mouse reports for X and Y
         mouse_report.x = clamp_to_report(x);
         mouse_report.y = clamp_to_report(y);
