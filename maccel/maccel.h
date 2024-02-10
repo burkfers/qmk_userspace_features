@@ -18,4 +18,14 @@
 
 #include "quantum.h"
 
+#define MACCEL_USE_KEYCODES
+
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report);
+bool           process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit);
+
+float maccel_get_steepness(void);
+float maccel_get_offset(void);
+float maccel_get_limit(void);
+void  maccel_set_steepness(float val);
+void  maccel_set_offset(float val);
+void  maccel_set_limit(float val);

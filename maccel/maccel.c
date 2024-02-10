@@ -48,9 +48,28 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #    define MACCEL_CPI_THROTTLE 200
 #endif
 
-const float maccel_a = MACCEL_STEEPNESS;
-const float maccel_b = MACCEL_OFFSET;
-const float maccel_c = MACCEL_LIMIT;
+static float maccel_a = MACCEL_STEEPNESS;
+static float maccel_b = MACCEL_OFFSET;
+static float maccel_c = MACCEL_LIMIT;
+
+float maccel_get_steepness(void) {
+    return maccel_a;
+}
+float maccel_get_offset(void) {
+    return maccel_b;
+}
+float maccel_get_limit(void) {
+    return maccel_c;
+}
+void maccel_set_steepness(float val) {
+    maccel_a = val;
+}
+void maccel_set_offset(float val) {
+    maccel_b = val;
+}
+void maccel_set_limit(float val) {
+    maccel_c = val;
+}
 
 // Clamp a value to the maximum report size to prevent over- and underflows
 static inline mouse_xy_report_t clamp_to_report(float val) {
@@ -112,3 +131,21 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     }
     return mouse_report;
 }
+
+#define MACCEL_USE_KEYCODES // REMOVEME
+bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit) {
+#ifdef MACCEL_USE_KEYCODES
+    if (record->event.pressed) {
+        if (keycode == steepness) {
+            maccel_set_steepness(maccel_get_steepness() + 0.1);
+            printf("maccel: steepness: %f, offset: %f, limit: %f\n", maccel_a, maccel_b, maccel_c);
+            return false;
+        }
+    }
+    return true;
+}
+#else
+    // provide a do-nothing keyrecord function so a user doesn't need to unshim when disabling the keycodes
+    return true;
+}
+#endif

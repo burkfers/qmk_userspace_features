@@ -57,6 +57,30 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
 }
 ```
 
+** 3. Runtime parameter adjusting with custom keycodes (optional)
+
+To use keycodes to adjust the parameters without recompiling, two more steps are required.
+First, add three keycodes to your keycode enum. You may choose different names, as long as you use the same names in the following step. If you are not yet using custom keycodes, add the following snippet to `keymap.c`:
+```
+enum my_keycodes {
+    MA_STEEPNESS = QK_USER, // mouse acceleration curve steepness step key
+    MA_OFFSET,              // mouse acceleration curve offset step key
+    MA_LIMIT,               // mouse acceleration curve limit step key
+};
+```
+Next, add another shim, this time to `process_record_user`. If you have not previously implemented this function, simply place the following snippet in your `keymap.c`:
+```
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    if (!process_record_maccel(keycode, record, MA_STEEPNESS, MA_OFFSET, MA_LIMIT)) {
+        return false;
+    }
+    return true;
+}
+```
+Take care to use the same names that you used in the previous step.
+
+See the configuration section on how to enable this feature once you have set it up.
+
 ## Configuration
 
 This accel curve works in opposite direction from what you may be used to from other acceleration tools, due to technical limitation in QMK. It scales pointer sensitivity upwards rather than downwards, which means you will likely have to lower your DPI setting from what you'd normally do.
@@ -88,6 +112,27 @@ To aid in dialing in the settings just right, a debug mode exists to print mathy
 ```
 
 The debug console will print your current DPI setting, the acceleration factor, the input velocity, and the accelerated velocity - which will help you understand what is happening at different settings of your variables.
+
+### Runtime adjusting of curve parameters by keycodes
+
+# WIP - DOES NOTHING YET
+
+Once the additional keycodes and shim are added, this feature can be enabled:
+```
+#define MACCEL_USE_KEYCODES
+```
+
+The three keycodes can be used to adjust the curve parameters. This is currently *not* persisted - Adjusted values are printed to the console to aid in finding the right settings for `config.h`.
+The parameter step keys are used in conjunction with the modifier keys:
+| Modifier    | Effect                                    |
+| ---         | ---                                       |
+| Shift       | Reverse step (subtract instead of adding) |
+| None        | `+1`                                      |
+| Control     | `+0.1`                                    |
+| Alt         | `+0.01`                                   |
+| Control+Alt | `+0.001`                                  |
+
+With every adjustment, an informational message is printed to the console.
 
 ## Limitations
 
