@@ -26,9 +26,15 @@ A device specific parameter required to ensure consistent acceleration behaviour
  * Cirque: tbd
  * Azoteq: tbd
 *///disclaimer: values guesstimated by scientifically questionable emperical testing
-#ifndef DEVICE_CPI_PARAM
-#    define DEVICE_CPI_PARAM 0.087 // device specific cpi scaling parameter
+#ifndef DEVICE_CPI_PARAM // device specific cpi scaling parameter
+#    if POINTING_DEVICE_DRIVER == pmw3360
+#        define DEVICE_CPI_PARAM 0.087
+#    else
+#        warning "Unsupported pointing device driver! Please manually set the scaling parameter DEVICE_CPI_PARAM to achieve a consistent acceleration curve!"
+#        define DEVICE_CPI_PARAM 0.087
+#    endif
 #endif
+
 #ifndef MACCEL_STEEPNESS
 #    define MACCEL_STEEPNESS 0.4 // steepness of accel curve
 #endif
