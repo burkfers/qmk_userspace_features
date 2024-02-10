@@ -44,6 +44,9 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #ifndef MACCEL_LIMIT
 #    define MACCEL_LIMIT 4.5 // upper limit of accel curve
 #endif
+#ifndef MACCEL_CPI_THROTTLE
+#    define MACCEL_CPI_THROTTLE 200
+#endif
 
 const float maccel_a = MACCEL_STEEPNESS;
 const float maccel_b = MACCEL_OFFSET;
@@ -60,6 +63,20 @@ static inline mouse_xy_report_t clamp_to_report(float val) {
     }
 }
 
+uint16_t maccel_get_cpi(void) {
+    static uint16_t device_cpi      = 100;
+    static uint32_t fetch_cpi_timer = 0;
+
+    if (timer_elapsed32(fetch_cpi_timer) > MACCEL_CPI_THROTTLE) {
+#if POINTING_DEVICE_DRIVER == azoteq_iqs5xx
+        wait_ms(1);
+#endif
+        device_cpi      = pointing_device_get_cpi();
+        fetch_cpi_timer = timer_read32();
+    }
+    return device_cpi;
+}
+
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
         // time since last mouse report:
@@ -71,7 +88,8 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
             device_cpi = pointing_device_get_cpi();
         }
         // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
-        const float dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
+        const uint16_t device_cpi     = maccel_get_cpi();
+        const float    dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
         // calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
         const float velocity = dpi_correction * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / delta_time;
         // calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
@@ -86,9 +104,10 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         mouse_report.x = clamp_to_report(x);
         mouse_report.y = clamp_to_report(y);
 
-#ifdef MACCEL_DEBUG                                   // console output for debugging (enable/disable in maccel.h)
+// console output for debugging (enable/disable in maccel.h)
+#ifdef MACCEL_DEBUG
         float accelerated = velocity * maccel_factor; // resulting velocity after acceleration; unneccesary for calculation, but nice for debug console
-        printf("DPI = %4i, factor = %4f, velocity = %4f, accelerated = %4f\n", pointing_device_get_cpi(), maccel_factor, velocity, accelerated);
+        printf("DPI = %4i, factor = %4f, velocity = %4f, accelerated = %4f\n", device_cpi, maccel_factor, velocity, accelerated);
 #endif // MACCEL_DEBUG
     }
     return mouse_report;
