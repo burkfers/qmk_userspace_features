@@ -56,10 +56,18 @@ static inline mouse_xy_report_t clamp_to_report(float val) {
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
+        // time since last mouse report:
+        uint16_t delta_time = timer_elapsed32(maccel_timer);
+        maccel_timer        = timer_read32();
+        //get device cpi setting, only call when mouse hasn't moved since more than 200ms
+        static uint16_t device_cpi = 200;
+        if (delta_time > 200) {
+            device_cpi = pointing_device_get_cpi();
+        }
         // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
-        const float dpi_correction = (float)100 / (DEVICE_CPI_PARAM * pointing_device_get_cpi());
+        const float    dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
         // calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
-        const float velocity = dpi_correction * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / timer_elapsed32(maccel_timer);
+        const float velocity = dpi_correction * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / delta_time;
         // calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
         float maccel_factor = maccel_c - (maccel_c - 1) * expf(-1 * (velocity - maccel_b) * maccel_a);
         if (maccel_factor <= 1) { // cut-off acceleration curve below maccel_factor = 1
@@ -71,8 +79,6 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         // set (clamped) mouse reports for X and Y
         mouse_report.x = clamp_to_report(x);
         mouse_report.y = clamp_to_report(y);
-        // record time of last mouse report:
-        maccel_timer = timer_read32();
 
 #ifdef MACCEL_DEBUG                                   // console output for debugging (enable/disable in maccel.h)
         float accelerated = velocity * maccel_factor; // resulting velocity after acceleration; unneccesary for calculation, but nice for debug console
