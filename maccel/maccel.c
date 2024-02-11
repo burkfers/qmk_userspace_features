@@ -82,7 +82,7 @@ static inline mouse_xy_report_t clamp_to_report(float val) {
     }
 }
 
-uint16_t maccel_get_cpi(void) {
+static inline uint16_t maccel_get_cpi(void) {
     static uint16_t device_cpi      = 100;
     static uint32_t fetch_cpi_timer = 0;
 
@@ -116,18 +116,20 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         if (maccel_factor <= 1) { // cut-off acceleration curve below maccel_factor = 1
             maccel_factor = 1;
         }
-        // calculate accelerated delta X and Y values:
-        const float x = mouse_report.x * maccel_factor;
-        const float y = mouse_report.y * maccel_factor;
-        // set (clamped) mouse reports for X and Y
-        mouse_report.x = clamp_to_report(x);
-        mouse_report.y = clamp_to_report(y);
+        // calculate accelerated delta X and Y values and clamp:
+        const mouse_xy_report_t x = clamp_to_report(mouse_report.x * maccel_factor);
+        const mouse_xy_report_t y = clamp_to_report(mouse_report.y * maccel_factor);
 
-// console output for debugging (enable/disable in maccel.h)
+// console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG
         float accelerated = velocity * maccel_factor; // resulting velocity after acceleration; unneccesary for calculation, but nice for debug console
         printf("DPI = %4i, factor = %4f, velocity = %4f, accelerated = %4f\n", device_cpi, maccel_factor, velocity, accelerated);
+        // printf("x %4i, y %4i --%4f--> x' %4i, y' %4i\n", mouse_report.x, mouse_report.y, maccel_factor, x, y);
 #endif // MACCEL_DEBUG
+
+        // report back accelerated values
+        mouse_report.x = x;
+        mouse_report.y = y;
     }
     return mouse_report;
 }
