@@ -119,11 +119,35 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     return mouse_report;
 }
 
-bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit) {
 #ifdef MACCEL_USE_KEYCODES
+static inline float get_step_by_mods(uint8_t mod_mask) {
+    float step = 1; // Default step is 1
+    if (mod_mask & MOD_MASK_CTRL) {
+        step /= 10; // control reduces by factor 10
+    }
+    if (mod_mask & MOD_MASK_ALT) {
+        step /= 100; // alt reduces by factor 100
+    }
+    if (mod_mask & MOD_MASK_SHIFT) {
+        step *= -1; // shift inverts
+    }
+    return step;
+}
+
+bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit) {
     if (record->event.pressed) {
         if (keycode == steepness) {
-            maccel_set_steepness(maccel_get_steepness() + 0.1);
+            maccel_set_steepness(maccel_get_steepness() + get_step_by_mods(get_mods()));
+            printf("maccel: steepness: %f, offset: %f, limit: %f\n", maccel_a, maccel_b, maccel_c);
+            return false;
+        }
+        if (keycode == offset) {
+            maccel_set_offset(maccel_get_offset() + get_step_by_mods(get_mods()));
+            printf("maccel: steepness: %f, offset: %f, limit: %f\n", maccel_a, maccel_b, maccel_c);
+            return false;
+        }
+        if (keycode == limit) {
+            maccel_set_limit(maccel_get_limit() + get_step_by_mods(get_mods()));
             printf("maccel: steepness: %f, offset: %f, limit: %f\n", maccel_a, maccel_b, maccel_c);
             return false;
         }
@@ -131,6 +155,7 @@ bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steep
     return true;
 }
 #else
+bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit) {
     // provide a do-nothing keyrecord function so a user doesn't need to unshim when disabling the keycodes
     return true;
 }
