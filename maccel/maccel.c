@@ -82,32 +82,17 @@ static inline mouse_xy_report_t clamp_to_report(float val) {
     }
 }
 
-static inline uint16_t maccel_get_cpi(void) {
-    static uint16_t device_cpi      = 100;
-    static uint32_t fetch_cpi_timer = 0;
-
-    if (timer_elapsed32(fetch_cpi_timer) > MACCEL_CPI_THROTTLE) {
-#if POINTING_DEVICE_DRIVER == azoteq_iqs5xx
-        wait_ms(1);
-#endif
-        device_cpi      = pointing_device_get_cpi();
-        fetch_cpi_timer = timer_read32();
-    }
-    return device_cpi;
-}
-
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
         // time since last mouse report:
         uint16_t delta_time = timer_elapsed32(maccel_timer);
         maccel_timer        = timer_read32();
-        // get device cpi setting, only call when mouse hasn't moved since more than 200ms
-        static uint16_t device_cpi = 200;
+        //get device cpi setting, only call when mouse hasn't moved since more than 200ms
+        static uint16_t device_cpi = 300;
         if (delta_time > 200) {
             device_cpi = pointing_device_get_cpi();
         }
         // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
-        const uint16_t device_cpi     = maccel_get_cpi();
         const float    dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
         // calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
         const float velocity = dpi_correction * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / delta_time;
