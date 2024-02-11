@@ -87,13 +87,13 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         // time since last mouse report:
         uint16_t delta_time = timer_elapsed32(maccel_timer);
         maccel_timer        = timer_read32();
-        //get device cpi setting, only call when mouse hasn't moved since more than 200ms
+        // get device cpi setting, only call when mouse hasn't moved since more than 200ms
         static uint16_t device_cpi = 300;
         if (delta_time > 200) {
             device_cpi = pointing_device_get_cpi();
         }
         // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
-        const float    dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
+        const float dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
         // calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
         const float velocity = dpi_correction * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / delta_time;
         // calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
