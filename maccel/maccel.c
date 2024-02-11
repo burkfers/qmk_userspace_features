@@ -132,7 +132,6 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     return mouse_report;
 }
 
-#define MACCEL_USE_KEYCODES // REMOVEME
 bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit) {
 #ifdef MACCEL_USE_KEYCODES
     if (record->event.pressed) {
