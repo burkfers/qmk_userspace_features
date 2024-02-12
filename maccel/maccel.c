@@ -71,16 +71,7 @@ void maccel_set_limit(float val) {
     maccel_c = val;
 }
 
-// Clamp a value to the maximum report size to prevent over- and underflows
-static inline mouse_xy_report_t clamp_to_report(float val) {
-    if (val < XY_REPORT_MIN) {
-        return XY_REPORT_MIN;
-    } else if (val > XY_REPORT_MAX) {
-        return XY_REPORT_MAX;
-    } else {
-        return val;
-    }
-}
+#define CONSTRAIN_REPORT(val) CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
@@ -102,8 +93,8 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
             maccel_factor = 1;
         }
         // calculate accelerated delta X and Y values and clamp:
-        const mouse_xy_report_t x = clamp_to_report(mouse_report.x * maccel_factor);
-        const mouse_xy_report_t y = clamp_to_report(mouse_report.y * maccel_factor);
+        const mouse_xy_report_t x = CONSTRAIN_REPORT(mouse_report.x * maccel_factor);
+        const mouse_xy_report_t y = CONSTRAIN_REPORT(mouse_report.y * maccel_factor);
 
 // console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG
