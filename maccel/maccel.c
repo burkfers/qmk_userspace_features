@@ -69,12 +69,21 @@ void maccel_set_offset(float val) {
 }
 void maccel_set_limit(float val) {
     maccel_c = val;
+
+void maccel_enabled(bool enable) {
+    _maccel_enabled = enable;
+#ifdef MACCEL_DEBUG
+    printf("maccel: enabled: %b\n", _maccel_enabled);
+#endif
 }
 
 #define CONSTRAIN_REPORT(val) CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
+        if (!_maccel_enabled) { // do nothing if not enabled
+            return mouse_report;
+        }
         // time since last mouse report:
         uint16_t delta_time = timer_elapsed32(maccel_timer);
         maccel_timer        = timer_read32();
