@@ -115,8 +115,6 @@ The debug console will print your current DPI setting, the acceleration factor, 
 
 ### Runtime adjusting of curve parameters by keycodes
 
-# WIP - DOES NOTHING YET
-
 Once the additional keycodes and shim are added, this feature can be enabled:
 ```
 #define MACCEL_USE_KEYCODES
