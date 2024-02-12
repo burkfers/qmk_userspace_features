@@ -48,27 +48,38 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #    define MACCEL_CPI_THROTTLE 200
 #endif
 
-static float maccel_a = MACCEL_STEEPNESS;
-static float maccel_b = MACCEL_OFFSET;
-static float maccel_c = MACCEL_LIMIT;
+typedef struct {
+    float a;
+    float b;
+    float c;
+} maccel_config_t;
+
+static maccel_config_t g_maccel_config = {.a = MACCEL_STEEPNESS, .b = MACCEL_OFFSET, .c = MACCEL_LIMIT};
+
+static bool _maccel_enabled = true;
 
 float maccel_get_steepness(void) {
-    return maccel_a;
+    return g_maccel_config.a;
 }
 float maccel_get_offset(void) {
-    return maccel_b;
+    return g_maccel_config.b;
 }
 float maccel_get_limit(void) {
-    return maccel_c;
+    return g_maccel_config.c;
 }
 void maccel_set_steepness(float val) {
-    maccel_a = val;
+    if (val >= 0) { // value less 0 leads to nonsensical results
+        g_maccel_config.a = val;
+    }
 }
 void maccel_set_offset(float val) {
-    maccel_b = val;
+    g_maccel_config.b = val;
 }
 void maccel_set_limit(float val) {
-    maccel_c = val;
+    if (val >= 1) { // limit less than 1 leads to nonsensical results
+        g_maccel_config.c = val;
+    }
+}
 
 void maccel_enabled(bool enable) {
     _maccel_enabled = enable;
@@ -97,7 +108,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         // calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
         const float velocity = dpi_correction * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / delta_time;
         // calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
-        float maccel_factor = maccel_c - (maccel_c - 1) * expf(-1 * (velocity - maccel_b) * maccel_a);
+        float maccel_factor = g_maccel_config.c - (g_maccel_config.c - 1) * expf(-1 * (velocity - g_maccel_config.b) * g_maccel_config.a);
         if (maccel_factor <= 1) { // cut-off acceleration curve below maccel_factor = 1
             maccel_factor = 1;
         }
@@ -138,17 +149,17 @@ bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steep
     if (record->event.pressed) {
         if (keycode == steepness) {
             maccel_set_steepness(maccel_get_steepness() + get_step_by_mods(get_mods()));
-            printf("maccel: steepness: %f, offset: %f, limit: %f\n", maccel_a, maccel_b, maccel_c);
+            printf("maccel: steepness: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
         if (keycode == offset) {
             maccel_set_offset(maccel_get_offset() + get_step_by_mods(get_mods()));
-            printf("maccel: steepness: %f, offset: %f, limit: %f\n", maccel_a, maccel_b, maccel_c);
+            printf("maccel: steepness: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
         if (keycode == limit) {
             maccel_set_limit(maccel_get_limit() + get_step_by_mods(get_mods()));
-            printf("maccel: steepness: %f, offset: %f, limit: %f\n", maccel_a, maccel_b, maccel_c);
+            printf("maccel: steepness: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
     }
