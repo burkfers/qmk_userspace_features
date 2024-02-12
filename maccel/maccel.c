@@ -88,7 +88,8 @@ void maccel_enabled(bool enable) {
 #endif
 }
 
-#define CONSTRAIN_REPORT(val) CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
+#define _CONSTRAIN(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
+#define CONSTRAIN_REPORT(val) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
