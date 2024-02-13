@@ -121,14 +121,22 @@ Once the additional keycodes and shim are added, this feature can be enabled:
 ```
 
 The three keycodes can be used to adjust the curve parameters. This is currently *not* persisted - Adjusted values are printed to the console to aid in finding the right settings for `config.h`.
-The parameter step keys are used in conjunction with the modifier keys:
+The step keys will adjust the parameters by the following amounts, which can optionally be adjusted:
+
+| Parameter | Default step value | Define name             |
+| ---       | ---                | ---                     |
+| Steepness | `+0.01`            | `MACCEL_STEEPNESS_STEP` |
+| Offset    | `+0.1`             | `MACCEL_OFFSET_STEP`    |
+| Limit     | `+0.1`             | `MACCEL_LIMIT_STEP`     |
+
+The modifier keys can be used to alter the step effect:
+
 | Modifier    | Effect                                    |
 | ---         | ---                                       |
 | Shift       | Reverse step (subtract instead of adding) |
-| None        | `+1`                                      |
-| Control     | `+0.1`                                    |
-| Alt         | `+0.01`                                   |
-| Control+Alt | `+0.001`                                  |
+| Control     | `step value * 10` (Step 10 times faster)  |
+
+Modifiers can be combined.
 
 With every adjustment, an informational message is printed to the console.
 

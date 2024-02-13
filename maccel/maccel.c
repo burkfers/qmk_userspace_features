@@ -48,6 +48,18 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #    define MACCEL_CPI_THROTTLE 200
 #endif
 
+#ifdef MACCEL_USE_KEYCODES
+#    ifndef MACCEL_STEEPNESS_STEP
+#        define MACCEL_STEEPNESS_STEP 0.01f
+#    endif
+#    ifndef MACCEL_OFFSET_STEP
+#        define MACCEL_OFFSET_STEP 0.1f
+#    endif
+#    ifndef MACCEL_LIMIT_STEP
+#        define MACCEL_LIMIT_STEP 0.1f
+#    endif
+#endif
+
 typedef struct {
     float a;
     float b;
@@ -132,13 +144,10 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
 }
 
 #ifdef MACCEL_USE_KEYCODES
-static inline float get_step_by_mods(uint8_t mod_mask) {
-    float step = 1; // Default step is 1
+static inline float get_mod_step(float step) {
+    const uint8_t mod_mask = get_mods();
     if (mod_mask & MOD_MASK_CTRL) {
-        step /= 10; // control reduces by factor 10
-    }
-    if (mod_mask & MOD_MASK_ALT) {
-        step /= 100; // alt reduces by factor 100
+        step *= 10; // control increases by factor 10
     }
     if (mod_mask & MOD_MASK_SHIFT) {
         step *= -1; // shift inverts
@@ -149,17 +158,17 @@ static inline float get_step_by_mods(uint8_t mod_mask) {
 bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit) {
     if (record->event.pressed) {
         if (keycode == steepness) {
-            maccel_set_steepness(maccel_get_steepness() + get_step_by_mods(get_mods()));
+            maccel_set_steepness(maccel_get_steepness() + get_mod_step(MACCEL_STEEPNESS_STEP));
             printf("maccel: steepness: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
         if (keycode == offset) {
-            maccel_set_offset(maccel_get_offset() + get_step_by_mods(get_mods()));
+            maccel_set_offset(maccel_get_offset() + get_mod_step(MACCEL_OFFSET_STEP));
             printf("maccel: steepness: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
         if (keycode == limit) {
-            maccel_set_limit(maccel_get_limit() + get_step_by_mods(get_mods()));
+            maccel_set_limit(maccel_get_limit() + get_mod_step(MACCEL_LIMIT_STEP));
             printf("maccel: steepness: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
