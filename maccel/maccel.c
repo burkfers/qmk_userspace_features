@@ -44,9 +44,6 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #ifndef MACCEL_LIMIT
 #    define MACCEL_LIMIT 4.5 // upper limit of accel curve
 #endif
-#ifndef MACCEL_CPI_THROTTLE
-#    define MACCEL_CPI_THROTTLE 200
-#endif
 
 #ifdef MACCEL_USE_KEYCODES
 #    ifndef MACCEL_STEEPNESS_STEP
