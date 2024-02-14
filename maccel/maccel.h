@@ -23,7 +23,7 @@
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report);
 bool           process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit);
 
-typedef struct {
+typedef struct _maccel_config_t {
     float a;
     float b;
     float c;
@@ -42,3 +42,5 @@ float maccel_get_limit(void);
 void  maccel_set_steepness(float val);
 void  maccel_set_offset(float val);
 void  maccel_set_limit(float val);
+
+void keyboard_post_init_maccel(void);

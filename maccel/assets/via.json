@@ -1,0 +1,58 @@
+        {
+            "label": "Mouse acceleration",
+            "content": [
+                {
+                    "label": "Acceleration",
+                    "content": [
+                        {
+                            "label": "Enabled",
+                            "type": "toggle",
+                            "content": [
+                                "id_maccel_enabled",
+                                24,
+                                4
+                            ]
+                        },
+                        {
+                            "label": "Steepness",
+                            "type": "range",
+                            "options": [
+                                0,
+                                60000
+                            ],
+                            "content": [
+                                "id_maccel_steepness",
+                                24,
+                                1
+                            ]
+                        },
+                        {
+                            "label": "Offset",
+                            "type": "range",
+                            "options": [
+                                0,
+                                60000
+                            ],
+                            "content": [
+                                "id_maccel_offset",
+                                24,
+                                2
+                            ]
+                        },
+                        {
+                            "label": "Limit",
+                            "type": "range",
+                            "options": [
+                                0,
+                                60000
+                            ],
+                            "content": [
+                                "id_maccel_limit",
+                                24,
+                                3
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }

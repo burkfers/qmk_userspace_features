@@ -29,13 +29,14 @@ This is an easy option if you are not maintaining a userspace.
 
 **2. Second build option for those maintaining a user space:**
 
+First, place the `maccel/` directory in `users/YOUR_USERNAME/features/` (you may omit the readme and assets).
 
-First copy the `maccel.c` and `maccel.h` files into your user space.
+Next, include `rules.mk` in your `rules.mk`:
+```make
+-include $(USER_PATH)/features/maccel/rules.mk
+```
 
-Then you can add the `maccel.c` to your build process by naming it in `rules.mk`: 
-```
-SRC += "maccel.c"
-```
+This will add `maccel.c` to your build process, and additionally include `maccel_via.c` if you have via enabled.
 
 ---
 
@@ -61,7 +62,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
 
 To use keycodes to adjust the parameters without recompiling, two more steps are required.
 First, add three keycodes to your keycode enum. You may choose different names, as long as you use the same names in the following step. If you are not yet using custom keycodes, add the following snippet to `keymap.c`:
-```
+```c
 enum my_keycodes {
     MA_STEEPNESS = QK_USER, // mouse acceleration curve steepness step key
     MA_OFFSET,              // mouse acceleration curve offset step key
@@ -69,7 +70,7 @@ enum my_keycodes {
 };
 ```
 Next, add another shim, this time to `process_record_user`. If you have not previously implemented this function, simply place the following snippet in your `keymap.c`:
-```
+```c
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_record_maccel(keycode, record, MA_STEEPNESS, MA_OFFSET, MA_LIMIT)) {
         return false;
@@ -91,7 +92,7 @@ Several characteristics of the acceleration curve can be tweaked by adding relev
 #define MACCEL_OFFSET 0.8    // start offset of accel curve
 #define MACCEL_LIMIT 3.5     // upper limit of accel curve
 ```
-[![](accel_curve.png)](https://www.wolframalpha.com/input?i=plot+c-%28c-1%29%28e%5E%28-%28x-b%29*a%29%29+with+a%3D0.6+with+b%3D0.8+with+c%3D3.5+from+x%3D-0.1+to+10+from+y%3D-0.1+to+4.5)
+[![](assets/accel_curve.png)](https://www.wolframalpha.com/input?i=plot+c-%28c-1%29%28e%5E%28-%28x-b%29*a%29%29+with+a%3D0.6+with+b%3D0.8+with+c%3D3.5+from+x%3D-0.1+to+10+from+y%3D-0.1+to+4.5)
 
 Interpret this graph as follows: horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: at the start of the curve the factor is 1, and your mouse sensitivity will be equal to your default DPI setting. At the end of the curve, the factor approaches a limit which can be set by the LIMIT variable. The limit is 3.5 in this example and will result in a maximum mouse sensitivity of 3.5 times your default DPI.
 
@@ -139,6 +140,53 @@ The modifier keys can be used to alter the step effect:
 Modifiers can be combined.
 
 With every adjustment, an informational message is printed to the console.
+
+## VIA support
+
+![](assets/via.png)
+
+Mouse acceleration can now be configured though via. If your keyboard is not already supported by via, you must first [create a via definition](https://www.caniusevia.com/docs/specification).
+
+To begin, ensure `maccel_via.c` is included in your build process. The provided `rules.mk` will do this for you if via is enabled on your board.
+
+Next, shim `keyboard_post_init_user`:
+```c
+void keyboard_post_init_user(void) {
+    keyboard_post_init_maccel();
+}
+```
+
+Add the entire function to your keymap if not already present, or insert the call to `keyboard_post_init_maccel` in your existing implementation.
+
+You must also configure the size of the EEPROM user block by placing the following define in `config.h`:
+```c
+#define EECONFIG_USER_DATA_SIZE 16
+```
+
+Please be aware of the following caveats:
+- The maccel via support takes over your eeprom user block. If you are already storing values in eeprom in your userspace, you must manually merge the features.
+- The maccel via support implements `via_custom_value_command_kb`. This is not compatible with keyboards that already add custom features to via. If your keyboard has custom via configuration, you must manually shim the keyboard-level callback.
+
+Create a custom via definition: Find your keyboard's via definition in the [via keyboards repository](https://github.com/the-via/keyboards/tree/master/v3) if you did not create your own.
+
+Extend its `menus` configuration by placing the [menu definition](assets/via.json) on the `menu` node. A completed example is provided for the BastardKB [Charybdis Nano](assets/cnano.json).
+
+Finally, after flashing the firmware to your board, load the custom via definition in the design tab in [via](https://usevia.app)
+
+# Setup checklist
+
+- Place files in `users/YOUR_USERNAME/features/maccel/`
+- Include `maccel/rules.mk` in your `rules.mk`
+- Shim `pointing_device_task_user`
+- Add configuration defines for parameters and optionally debugging
+- Optional: Config keycodes:
+  - Enable keycode support by define
+  - Create three keycodes in the keycode enum
+  - Shim `process_record_user`
+- Optional: VIA support:
+  - Shim `keyboard_post_init_user`
+  - Set user eeprom data block size
+  - Create custom via json and sideload it in the web app
 
 ## Limitations
 

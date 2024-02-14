@@ -20,7 +20,14 @@
 
 static uint32_t maccel_timer;
 
-maccel_config_t g_maccel_config = {.a = MACCEL_STEEPNESS, .b = MACCEL_OFFSET, .c = MACCEL_LIMIT};
+maccel_config_t g_maccel_config = {
+    // clang-format off
+    .a = MACCEL_STEEPNESS,
+    .b = MACCEL_OFFSET,
+    .c = MACCEL_LIMIT,
+    .enabled = true
+    // clang-format on
+};
 
 /* DEVICE_CPI_PARAM
 A device specific parameter required to ensure consistent acceleration behaviour across different devices and user dpi settings.
@@ -177,3 +184,8 @@ bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steep
     return true;
 }
 #endif
+
+// provide weak do-nothing shims so users do not need to unshim when diabling via
+__attribute__((weak)) void keyboard_post_init_maccel(void) {
+    return;
+}
