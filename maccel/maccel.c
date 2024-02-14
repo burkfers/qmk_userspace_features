@@ -96,6 +96,12 @@ void maccel_enabled(bool enable) {
     printf("maccel: enabled: %b\n", _maccel_enabled);
 #endif
 }
+bool maccel_get_enabled(void) {
+    return _maccel_enabled;
+}
+void maccel_toggle_enabled(void) {
+    maccel_enabled(!_maccel_enabled);
+}
 
 #define _CONSTRAIN(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 #define CONSTRAIN_REPORT(val) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)

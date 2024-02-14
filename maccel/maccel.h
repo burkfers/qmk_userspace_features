@@ -24,6 +24,8 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report);
 bool           process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit);
 
 void maccel_enabled(bool enable);
+bool maccel_get_enabled(void);
+void maccel_toggle_enabled(void);
 
 float maccel_get_steepness(void);
 float maccel_get_offset(void);
