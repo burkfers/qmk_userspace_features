@@ -16,8 +16,11 @@
  */
 #include "quantum.h"
 #include "math.h"
+#include "maccel.h"
 
 static uint32_t maccel_timer;
+
+maccel_config_t g_maccel_config = {.a = MACCEL_STEEPNESS, .b = MACCEL_OFFSET, .c = MACCEL_LIMIT};
 
 /* DEVICE_CPI_PARAM
 A device specific parameter required to ensure consistent acceleration behaviour across different devices and user dpi settings.
@@ -57,16 +60,6 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #    endif
 #endif
 
-typedef struct {
-    float a;
-    float b;
-    float c;
-} maccel_config_t;
-
-static maccel_config_t g_maccel_config = {.a = MACCEL_STEEPNESS, .b = MACCEL_OFFSET, .c = MACCEL_LIMIT};
-
-static bool _maccel_enabled = true;
-
 float maccel_get_steepness(void) {
     return g_maccel_config.a;
 }
@@ -91,16 +84,16 @@ void maccel_set_limit(float val) {
 }
 
 void maccel_enabled(bool enable) {
-    _maccel_enabled = enable;
+    g_maccel_config.enabled = enable;
 #ifdef MACCEL_DEBUG
-    printf("maccel: enabled: %b\n", _maccel_enabled);
+    printf("maccel: enabled: %b\n", g_maccel_config.enabled);
 #endif
 }
 bool maccel_get_enabled(void) {
-    return _maccel_enabled;
+    return g_maccel_config.enabled;
 }
 void maccel_toggle_enabled(void) {
-    maccel_enabled(!_maccel_enabled);
+    maccel_enabled(!maccel_get_enabled());
 }
 
 #define _CONSTRAIN(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
@@ -108,7 +101,7 @@ void maccel_toggle_enabled(void) {
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
-        if (!_maccel_enabled) { // do nothing if not enabled
+        if (!g_maccel_config.enabled) { // do nothing if not enabled
             return mouse_report;
         }
         // time since last mouse report:

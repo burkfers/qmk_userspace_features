@@ -23,6 +23,15 @@
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report);
 bool           process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit);
 
+typedef struct {
+    float a;
+    float b;
+    float c;
+    bool  enabled;
+} maccel_config_t;
+
+extern maccel_config_t g_maccel_config;
+
 void maccel_enabled(bool enable);
 bool maccel_get_enabled(void);
 void maccel_toggle_enabled(void);
