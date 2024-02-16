@@ -36,8 +36,12 @@ A device specific parameter required to ensure consistent acceleration behaviour
  * Cirque: tbd
  * Azoteq: tbd
 *///disclaimer: values guesstimated by scientifically questionable emperical testing
-#ifndef DEVICE_CPI_PARAM // device specific cpi scaling parameter
-#    if POINTING_DEVICE_DRIVER == pmw3360
+// Slightly hacky method of detecting which driver is loaded
+#if !defined(DEVICE_CPI_PARAM)
+// #    if defined(PMW33XX_FIRMWARE_LENGTH)
+#    if defined(POINTING_DEVICE_DRIVER_pmw3360)
+#        define DEVICE_CPI_PARAM 0.087
+#    elif defined(POINTING_DEVICE_DRIVER_cirque_pinnacle_spi)
 #        define DEVICE_CPI_PARAM 0.087
 #    else
 #        warning "Unsupported pointing device driver! Please manually set the scaling parameter DEVICE_CPI_PARAM to achieve a consistent acceleration curve!"
