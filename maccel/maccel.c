@@ -97,7 +97,7 @@ void maccel_set_limit(float val) {
 void maccel_enabled(bool enable) {
     g_maccel_config.enabled = enable;
 #ifdef MACCEL_DEBUG
-    printf("maccel: enabled: %b\n", g_maccel_config.enabled);
+    printf("maccel: enabled: %d\n", g_maccel_config.enabled);
 #endif
 }
 bool maccel_get_enabled(void) {
