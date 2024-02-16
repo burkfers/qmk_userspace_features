@@ -42,7 +42,7 @@ void maccel_config_set_value(uint8_t *data) {
     uint8_t *value_data = &(data[1]);
 
     switch (*value_id) {
-        case id_maccel_a:
+        case id_maccel_a: {
             uint16_t a = COMBINE_UINT8(value_data[0], value_data[1]);
 
             // calc uint16 to float: steepness only moves the comma
@@ -51,21 +51,25 @@ void maccel_config_set_value(uint8_t *data) {
             printf("maccel:via: setting a: %u %u -> %u -> %f\n", value_data[0], value_data[1], a, g_maccel_config.a);
 #endif
             break;
-        case id_maccel_b:
+        }
+        case id_maccel_b: {
             uint16_t b = COMBINE_UINT8(value_data[0], value_data[1]);
 
             // calc uint16 to float: offset moves comma and shifts by 3, so that -3..3 fits into 0..60k
             g_maccel_config.b = (b / 10000.0f) - 3;
             break;
-        case id_maccel_c:
+        }
+        case id_maccel_c: {
             uint16_t c = COMBINE_UINT8(value_data[0], value_data[1]);
 
             // calc uint16 to float: offset moves comma, divides by 2 and shifts by 1, so that 1..14 fits into 0..60k
             g_maccel_config.c = (c / 5000.0f) + 1;
             break;
-        case id_maccel_enabled:
+        }
+        case id_maccel_enabled: {
             g_maccel_config.enabled = value_data[0];
             break;
+        }
     }
 }
 
@@ -76,7 +80,7 @@ void maccel_config_get_value(uint8_t *data) {
     uint8_t *value_data = &(data[1]);
 
     switch (*value_id) {
-        case id_maccel_a:
+        case id_maccel_a: {
             uint16_t a    = g_maccel_config.a * 10000;
             value_data[0] = a >> 8;
             value_data[1] = a & 0xFF;
@@ -84,19 +88,23 @@ void maccel_config_get_value(uint8_t *data) {
             printf("maccel:via: getting a: %f -> %u -> %u %u\n", g_maccel_config.a, a, value_data[0], value_data[1]);
 #endif
             break;
-        case id_maccel_b:
+        }
+        case id_maccel_b: {
             uint16_t b    = (g_maccel_config.b + 3) * 10000;
             value_data[0] = b >> 8;
             value_data[1] = b & 0xFF;
             break;
-        case id_maccel_c:
+        }
+        case id_maccel_c: {
             uint16_t c    = (g_maccel_config.c - 1) * 5000;
             value_data[0] = c >> 8;
             value_data[1] = c & 0xFF;
             break;
-        case id_maccel_enabled:
+        }
+        case id_maccel_enabled: {
             value_data[0] = g_maccel_config.enabled;
             break;
+        }
     }
 }
 
