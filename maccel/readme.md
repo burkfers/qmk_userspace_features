@@ -86,17 +86,23 @@ See the configuration section on how to enable this feature once you have set it
 
 This accel curve works in opposite direction from what you may be used to from other acceleration tools, due to technical limitation in QMK. It scales pointer sensitivity upwards rather than downwards, which means you will likely have to lower your DPI setting from what you'd normally do.
 
-Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
+Three characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`,
+with these values as defaults:
+
 ```c
-#define MACCEL_STEEPNESS 0.6 // steepness of accel curve
-#define MACCEL_OFFSET 0.8    // start offset of accel curve
-#define MACCEL_LIMIT 3.5     // upper limit of accel curve
+#define MACCEL_STEEPNESS 1.0 // steepness of accel sigmoid-curve
+#define MACCEL_OFFSET 5.0    // midpoint velocity of accel sigmoid-curve
+#define MACCEL_LIMIT 6.0     // upper limit of accel sigmoid-curve
 ```
-[![](assets/accel_curve.png)](https://www.wolframalpha.com/input?i=plot+c-%28c-1%29%28e%5E%28-%28x-b%29*a%29%29+with+a%3D0.6+with+b%3D0.8+with+c%3D3.5+from+x%3D-0.1+to+10+from+y%3D-0.1+to+4.5)
 
-Interpret this graph as follows: horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: at the start of the curve the factor is 1, and your mouse sensitivity will be equal to your default DPI setting. At the end of the curve, the factor approaches a limit which can be set by the LIMIT variable. The limit is 3.5 in this example and will result in a maximum mouse sensitivity of 3.5 times your default DPI.
+[![](assets/accel_curve.png)]()
 
-The OFFSET variable moves the start of the curve towards the right, which means acceleration will kick in only after a certain velocity is reached. This is useful for low speed precision movements, in effect what you might normally use SNIPING mode for - and this is intended to entirely replace SNIPING mode. If you do not like this, you can set this variable to 0.
+To find a curve that suits your needs, either run the [included python program](./plotaccel.py) to plot the curve 
+or plot it in [Wolfram Alpha](https://www.wolframalpha.com/input?i=plot++1%2B%28c-1%29%2F%281+%2B+e%5E%28-%28x-b%29*a%29%29+with+a%3D1+with+b%3D5+with+c%3D6+from+x%3D-0.1+to+10+from+y%3D-0.5+to+6.5).
+
+Interpret this graph as follows: horizontal x-axis is *input velocity* (ie. how fast you are physically moving your mouse/trackball/trackpad); vertical y-axis is the *acceleration factor*, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: at the start of the curve the factor is 1, and your mouse sensitivity will be equal to your default DPI setting. At the end of the curve, the factor approaches a limit which can be set by the LIMIT variable. The limit is 4 in this example and will result in a maximum mouse sensitivity of 4pp times your default DPI.
+
+The OFFSET variable moves the center of the curve towards the right, which means acceleration will kick in only after a certain velocity is reached. This is useful for low speed precision movements, in effect what you might normally use SNIPING mode for - and this is intended to entirely replace SNIPING mode.
 
 The STEEPNESS variable sets the steepness of the acceleration curve. A lower value will result in a flatter curve which takes longer to reach its LIMIT. A higher value will result in a steeper curve, which will reach its LIMIT faster.
 
@@ -126,9 +132,9 @@ The step keys will adjust the parameters by the following amounts, which can opt
 
 | Parameter | Default step value | Define name             |
 | ---       | ---                | ---                     |
-| Steepness | `+0.01`            | `MACCEL_STEEPNESS_STEP` |
-| Offset    | `+0.1`             | `MACCEL_OFFSET_STEP`    |
-| Limit     | `+0.1`             | `MACCEL_LIMIT_STEP`     |
+| Steepness | `+0.1`             | `MACCEL_STEEPNESS_STEP` |
+| Midpoint  | `+0.5`             | `MACCEL_OFFSET_STEP`    |
+| Limit     | `+1.0`             | `MACCEL_LIMIT_STEP`     |
 
 The modifier keys can be used to alter the step effect:
 

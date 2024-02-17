@@ -20,15 +20,17 @@
 
 static uint32_t maccel_timer;
 
+
 #ifndef MACCEL_STEEPNESS
-#    define MACCEL_STEEPNESS 0.4 // steepness of accel curve
+#    define MACCEL_STEEPNESS 1.0 // steepness of accel sigmoid-curve
 #endif
 #ifndef MACCEL_OFFSET
-#    define MACCEL_OFFSET 1.1 // start offset of accel curve
+#    define MACCEL_OFFSET 5.0 // midpoint velocity of accel sigmoid-curve
 #endif
 #ifndef MACCEL_LIMIT
-#    define MACCEL_LIMIT 4.5 // upper limit of accel curve
+#    define MACCEL_LIMIT 6.0 // upper limit of accel sigmoid-curve
 #endif
+
 
 maccel_config_t g_maccel_config = {
     // clang-format off
@@ -36,7 +38,7 @@ maccel_config_t g_maccel_config = {
     .b = MACCEL_OFFSET,
     .c = MACCEL_LIMIT,
     .enabled = true
-    // clang-format on
+    // clang-format on,e
 };
 
 /* DEVICE_CPI_PARAM
@@ -59,15 +61,16 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #    endif
 #endif
 
+
 #ifdef MACCEL_USE_KEYCODES
 #    ifndef MACCEL_STEEPNESS_STEP
-#        define MACCEL_STEEPNESS_STEP 0.01f
+#        define MACCEL_STEEPNESS_STEP 0.1f
 #    endif
 #    ifndef MACCEL_OFFSET_STEP
-#        define MACCEL_OFFSET_STEP 0.1f
+#        define MACCEL_OFFSET_STEP 0.5f
 #    endif
 #    ifndef MACCEL_LIMIT_STEP
-#        define MACCEL_LIMIT_STEP 0.1f
+#        define MACCEL_LIMIT_STEP 1.0f
 #    endif
 #endif
 
@@ -127,11 +130,13 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         const float dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
         // calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
         const float velocity = dpi_correction * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / delta_time;
-        // calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
-        float maccel_factor = g_maccel_config.c - (g_maccel_config.c - 1) * expf(-1 * (velocity - g_maccel_config.b) * g_maccel_config.a);
-        if (maccel_factor <= 1) { // cut-off acceleration curve below maccel_factor = 1
-            maccel_factor = 1;
-        }
+        // calculate mouse acceleration factor: f(dv) = 1 + (c - 1) / (1 + e^(-(dv - b) * a))
+        const float steepness = g_maccel_config.a;
+        const float velocity_midpoint = g_maccel_config.b;
+        const float factor_max = g_maccel_config.c;
+        const float factor_min = 1;  //  Maybe turn it into proper param?
+        const float e = expf( - steepness * (velocity - velocity_midpoint));
+        const float maccel_factor = factor_min + (factor_max - factor_min) / (1 + e);
         // calculate accelerated delta X and Y values and clamp:
         const mouse_xy_report_t x = CONSTRAIN_REPORT(mouse_report.x * maccel_factor);
         const mouse_xy_report_t y = CONSTRAIN_REPORT(mouse_report.y * maccel_factor);
