@@ -20,6 +20,16 @@
 
 static uint32_t maccel_timer;
 
+#ifndef MACCEL_STEEPNESS
+#    define MACCEL_STEEPNESS 0.4 // steepness of accel curve
+#endif
+#ifndef MACCEL_OFFSET
+#    define MACCEL_OFFSET 1.1 // start offset of accel curve
+#endif
+#ifndef MACCEL_LIMIT
+#    define MACCEL_LIMIT 4.5 // upper limit of accel curve
+#endif
+
 maccel_config_t g_maccel_config = {
     // clang-format off
     .a = MACCEL_STEEPNESS,
@@ -47,16 +57,6 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #        warning "Unsupported pointing device driver! Please manually set the scaling parameter DEVICE_CPI_PARAM to achieve a consistent acceleration curve!"
 #        define DEVICE_CPI_PARAM 0.087
 #    endif
-#endif
-
-#ifndef MACCEL_STEEPNESS
-#    define MACCEL_STEEPNESS 0.4 // steepness of accel curve
-#endif
-#ifndef MACCEL_OFFSET
-#    define MACCEL_OFFSET 1.1 // start offset of accel curve
-#endif
-#ifndef MACCEL_LIMIT
-#    define MACCEL_LIMIT 4.5 // upper limit of accel curve
 #endif
 
 #ifdef MACCEL_USE_KEYCODES
