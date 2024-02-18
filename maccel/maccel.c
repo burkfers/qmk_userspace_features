@@ -29,6 +29,11 @@ static uint32_t maccel_timer;
 #ifndef MACCEL_LIMIT
 #    define MACCEL_LIMIT 4.5 // upper limit of accel curve
 #endif
+#ifndef MACCEL_Z        //needs a better name; and maccel_steepness is now also confusing... maybe maccel_smoothing_start and maccel_smoothing_end?
+#    define MACCEL_Z 4 //steepnesss at start of accel curve
+#endif
+
+static float g_maccel_config_z = MACCEL_Z; //@burkfers: turn this into g_maccel_config.z like the other variables
 
 maccel_config_t g_maccel_config = {
     // clang-format off
@@ -137,10 +142,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         // calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
         const float velocity = dpi_correction * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / delta_time;
         // calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
-        float maccel_factor = g_maccel_config.c - (g_maccel_config.c - 1) * expf(-1 * (velocity - g_maccel_config.b) * g_maccel_config.a);
-        if (maccel_factor <= 1) { // cut-off acceleration curve below maccel_factor = 1
-            maccel_factor = 1;
-        }
+        float maccel_factor = g_maccel_config.c - (g_maccel_config.c - 1) / powf(1 + expf(g_maccel_config_z*(velocity - g_maccel_config.b)), g_maccel_config.a / g_maccel_config_z);
         // calculate accelerated delta X and Y values and clamp:
         const mouse_xy_report_t x = CONSTRAIN_REPORT(mouse_report.x * maccel_factor);
         const mouse_xy_report_t y = CONSTRAIN_REPORT(mouse_report.y * maccel_factor);
