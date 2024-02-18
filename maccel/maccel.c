@@ -139,8 +139,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
 // console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG
         float accelerated = velocity * maccel_factor; // resulting velocity after acceleration; unneccesary for calculation, but nice for debug console
-        printf("DPI = %4i, factor = %4f, velocity = %4f, accelerated = %4f\n", device_cpi, maccel_factor, velocity, accelerated);
-        // printf("x %4i, y %4i --%4f--> x' %4i, y' %4i\n", mouse_report.x, mouse_report.y, maccel_factor, x, y);
+        printf("MACCEL: DPI = %i, Steepn. = %f, Offset = %f, Limit = %f  |  Factor = %4f, Veloc.in = %4f, Veloc.out = %4f\n", device_cpi, g_maccel_config.a, g_maccel_config.b, g_maccel_config.c,  maccel_factor, velocity, accelerated);
 #endif // MACCEL_DEBUG
 
         // report back accelerated values
@@ -166,17 +165,17 @@ bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steep
     if (record->event.pressed) {
         if (keycode == steepness) {
             maccel_set_steepness(maccel_get_steepness() + get_mod_step(MACCEL_STEEPNESS_STEP));
-            printf("maccel: steepness: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:keycode: STEEPNESS: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
         if (keycode == offset) {
             maccel_set_offset(maccel_get_offset() + get_mod_step(MACCEL_OFFSET_STEP));
-            printf("maccel: steepness: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:keycode: steepness: %f, OFFSET: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
         if (keycode == limit) {
             maccel_set_limit(maccel_get_limit() + get_mod_step(MACCEL_LIMIT_STEP));
-            printf("maccel: steepness: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:keycode: steepness: %f, offset: %f, LIMIT: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
     }
