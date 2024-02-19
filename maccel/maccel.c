@@ -122,6 +122,10 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         static uint16_t device_cpi = 300;
         if (delta_time > 200) {
             device_cpi = pointing_device_get_cpi();
+#ifdef POINTING_DEVICE_DRIVER_pmw3360
+            // janky bug-fix for PMW3360
+            pointing_device_set_cpi(device_cpi);
+#endif // POINTING_DEVICE_DRIVER_pmw3360
         }
         // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
         const float dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
