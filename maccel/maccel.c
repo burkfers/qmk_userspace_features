@@ -20,20 +20,20 @@
 
 static uint32_t maccel_timer;
 
-#ifndef MACCEL_STEEPNESS
-#    define MACCEL_STEEPNESS 0.4 // steepness of accel curve
+#ifndef MACCEL_START_RATE   
+#    define MACCEL_START_RATE 2.0   // higher value = accel curve takes off more abrubtly
+#endif
+#ifndef MACCEL_GROWTH_RATE
+#    define MACCEL_GROWTH_RATE 0.25 // higher value = curve reaches its limit faster
 #endif
 #ifndef MACCEL_OFFSET
-#    define MACCEL_OFFSET 1.1 // start offset of accel curve
+#    define MACCEL_OFFSET 2.2       // higher value = shifts whole curve to the right, so acceleration kicks in later
 #endif
 #ifndef MACCEL_LIMIT
-#    define MACCEL_LIMIT 4.5 // upper limit of accel curve
-#endif
-#ifndef MACCEL_Z        //needs a better name; and maccel_steepness is now also confusing... maybe maccel_smoothing_start and maccel_smoothing_end?
-#    define MACCEL_Z 4 //steepnesss at start of accel curve
+#    define MACCEL_LIMIT 6.0        // upper limit of accel curve
 #endif
 
-static float g_maccel_config_z = MACCEL_Z; //@burkfers: turn this into g_maccel_config.z like the other variables
+static float g_maccel_config_z = MACCEL_START_RATE; //@burkfers: turn this into g_maccel_config.z like the other variables
 
 maccel_config_t g_maccel_config = {
     // clang-format off
@@ -150,7 +150,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
 // console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG
         float accelerated = velocity * maccel_factor; // resulting velocity after acceleration; unneccesary for calculation, but nice for debug console
-        printf("MACCEL: DPI = %i, Steepn. = %f, Offset = %f, Limit = %f  |  Factor = %4f, Veloc.in = %4f, Veloc.out = %4f\n", device_cpi, g_maccel_config.a, g_maccel_config.b, g_maccel_config.c,  maccel_factor, velocity, accelerated);
+        printf("MACCEL: DPI = %i, Start = %f, Growth = %f, Offset = %f, Limit = %f  |  Factor = %4f, Veloc.in = %4f, Veloc.out = %4f\n", device_cpi, g_maccel_config_z, g_maccel_config.a, g_maccel_config.b, g_maccel_config.c,  maccel_factor, velocity, accelerated);
 #endif // MACCEL_DEBUG
 
         // report back accelerated values
