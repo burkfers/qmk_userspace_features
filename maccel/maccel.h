@@ -24,9 +24,10 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report);
 bool           process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t growthrate, uint16_t offset, uint16_t limit);
 
 typedef struct _maccel_config_t {
-    float a;
-    float b;
-    float c;
+    float growth_rate;
+    float offset;
+    float limit;
+    float takeoff;
     bool  enabled;
 } maccel_config_t;
 

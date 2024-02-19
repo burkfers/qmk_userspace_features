@@ -26,10 +26,10 @@ enum via_maccel_channel {
 };
 enum via_maccel_ids {
     // clang-format off
-    id_maccel_a       = 1,
-    id_maccel_b       = 2,
-    id_maccel_c       = 3,
-    id_maccel_enabled = 4
+    id_maccel_growth_rate = 1,
+    id_maccel_offset      = 2,
+    id_maccel_limit       = 3,
+    id_maccel_enabled     = 4
     // clang-format on
 };
 
@@ -42,33 +42,33 @@ void maccel_config_set_value(uint8_t *data) {
     uint8_t *value_data = &(data[1]);
 
     switch (*value_id) {
-        case id_maccel_a: {
-            uint16_t a = COMBINE_UINT8(value_data[0], value_data[1]);
+        case id_maccel_growth_rate: {
+            uint16_t growth_rate = COMBINE_UINT8(value_data[0], value_data[1]);
 
-            // calc uint16 to float: growthrate only moves the comma
-            g_maccel_config.a = a / 10000.0f;
+            // calc uint16 to float: growth_rate only moves the comma
+            g_maccel_config.growth_rate = growth_rate / 10000.0f;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: GROWTHRATE: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:via: growth_rate: %f, offset: %f, limit: %f\n", g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
             break;
         }
-        case id_maccel_b: {
-            uint16_t b = COMBINE_UINT8(value_data[0], value_data[1]);
+        case id_maccel_offset: {
+            uint16_t offset = COMBINE_UINT8(value_data[0], value_data[1]);
 
             // calc uint16 to float: offset moves comma and shifts by 3, so that -3..3 fits into 0..60k
-            g_maccel_config.b = (b / 10000.0f) - 3;
+            g_maccel_config.offset = (offset / 10000.0f) - 3;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: growthrate: %f, OFFSET: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:via: growth_rate: %f, OFFSET: %f, limit: %f\n", g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
             break;
         }
-        case id_maccel_c: {
-            uint16_t c = COMBINE_UINT8(value_data[0], value_data[1]);
+        case id_maccel_limit: {
+            uint16_t limit = COMBINE_UINT8(value_data[0], value_data[1]);
 
             // calc uint16 to float: offset moves comma, divides by 2 and shifts by 1, so that 1..14 fits into 0..60k
-            g_maccel_config.c = (c / 5000.0f) + 1;
+            g_maccel_config.limit = (limit / 5000.0f) + 1;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: growthrate: %f, offset: %f, LIMIT: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:via: growth_rate: %f, offset: %f, LIMIT: %f\n", g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
             break;
         }
@@ -86,22 +86,22 @@ void maccel_config_get_value(uint8_t *data) {
     uint8_t *value_data = &(data[1]);
 
     switch (*value_id) {
-        case id_maccel_a: {
-            uint16_t a    = g_maccel_config.a * 10000;
-            value_data[0] = a >> 8;
-            value_data[1] = a & 0xFF;
+        case id_maccel_growth_rate: {
+            uint16_t growth_rate = g_maccel_config.growth_rate * 10000;
+            value_data[0]        = growth_rate >> 8;
+            value_data[1]        = growth_rate & 0xFF;
             break;
         }
-        case id_maccel_b: {
-            uint16_t b    = (g_maccel_config.b + 3) * 10000;
-            value_data[0] = b >> 8;
-            value_data[1] = b & 0xFF;
+        case id_maccel_offset: {
+            uint16_t offset = (g_maccel_config.offset + 3) * 10000;
+            value_data[0]   = offset >> 8;
+            value_data[1]   = offset & 0xFF;
             break;
         }
-        case id_maccel_c: {
-            uint16_t c    = (g_maccel_config.c - 1) * 5000;
-            value_data[0] = c >> 8;
-            value_data[1] = c & 0xFF;
+        case id_maccel_limit: {
+            uint16_t limit = (g_maccel_config.limit - 1) * 5000;
+            value_data[0]  = limit >> 8;
+            value_data[1]  = limit & 0xFF;
             break;
         }
         case id_maccel_enabled: {
