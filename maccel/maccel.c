@@ -21,23 +21,23 @@
 static uint32_t maccel_timer;
 
 #ifndef MACCEL_START_RATE   
-#    define MACCEL_START_RATE 2.0   // higher value = accel curve takes off more abrubtly
+#    define MACCEL_START_RATE 2.0   // lower/higher value = curve starts more smoothly/abrubtly
 #endif
 #ifndef MACCEL_GROWTH_RATE
-#    define MACCEL_GROWTH_RATE 0.25 // higher value = curve reaches its limit faster
+#    define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster
 #endif
 #ifndef MACCEL_OFFSET
-#    define MACCEL_OFFSET 2.2       // higher value = shifts whole curve to the right, so acceleration kicks in later
+#    define MACCEL_OFFSET 2.2       // lower/higher value = acceleration kicks in earlier/later
 #endif
 #ifndef MACCEL_LIMIT
-#    define MACCEL_LIMIT 6.0        // upper limit of accel curve
+#    define MACCEL_LIMIT 6.0        // upper limit of accel curve (maximum acceleration factor)
 #endif
 
 static float g_maccel_config_z = MACCEL_START_RATE; //@burkfers: turn this into g_maccel_config.z like the other variables
 
 maccel_config_t g_maccel_config = {
     // clang-format off
-    .a = MACCEL_STEEPNESS,
+    .a = MACCEL_GROWTH_RATE,
     .b = MACCEL_OFFSET,
     .c = MACCEL_LIMIT,
     .enabled = true
@@ -67,8 +67,8 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #endif
 
 #ifdef MACCEL_USE_KEYCODES
-#    ifndef MACCEL_STEEPNESS_STEP
-#        define MACCEL_STEEPNESS_STEP 0.01f
+#    ifndef MACCEL_GROWTH_RATE_STEP
+#        define MACCEL_GROWTH_RATE_STEP 0.01f
 #    endif
 #    ifndef MACCEL_OFFSET_STEP
 #        define MACCEL_OFFSET_STEP 0.1f
@@ -78,7 +78,7 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #    endif
 #endif
 
-float maccel_get_steepness(void) {
+float maccel_get_growthrate(void) {
     return g_maccel_config.a;
 }
 float maccel_get_offset(void) {
@@ -87,7 +87,7 @@ float maccel_get_offset(void) {
 float maccel_get_limit(void) {
     return g_maccel_config.c;
 }
-void maccel_set_steepness(float val) {
+void maccel_set_growthrate(float val) {
     if (val >= 0) { // value less 0 leads to nonsensical results
         g_maccel_config.a = val;
     }
@@ -172,28 +172,28 @@ static inline float get_mod_step(float step) {
     return step;
 }
 
-bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit) {
+bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t growthrate, uint16_t offset, uint16_t limit) {
     if (record->event.pressed) {
-        if (keycode == steepness) {
-            maccel_set_steepness(maccel_get_steepness() + get_mod_step(MACCEL_STEEPNESS_STEP));
-            printf("MACCEL:keycode: STEEPNESS: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+        if (keycode == growthrate) {
+            maccel_set_growthrate(maccel_get_growthrate() + get_mod_step(MACCEL_GROWTH_RATE_STEP));
+            printf("MACCEL:keycode: growthrate: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
         if (keycode == offset) {
             maccel_set_offset(maccel_get_offset() + get_mod_step(MACCEL_OFFSET_STEP));
-            printf("MACCEL:keycode: steepness: %f, OFFSET: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:keycode: growthrate: %f, OFFSET: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
         if (keycode == limit) {
             maccel_set_limit(maccel_get_limit() + get_mod_step(MACCEL_LIMIT_STEP));
-            printf("MACCEL:keycode: steepness: %f, offset: %f, LIMIT: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:keycode: growthrate: %f, offset: %f, LIMIT: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
             return false;
         }
     }
     return true;
 }
 #else
-bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit) {
+bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t growthrate, uint16_t offset, uint16_t limit) {
     // provide a do-nothing keyrecord function so a user doesn't need to unshim when disabling the keycodes
     return true;
 }

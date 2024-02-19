@@ -45,10 +45,10 @@ void maccel_config_set_value(uint8_t *data) {
         case id_maccel_a: {
             uint16_t a = COMBINE_UINT8(value_data[0], value_data[1]);
 
-            // calc uint16 to float: steepness only moves the comma
+            // calc uint16 to float: growthrate only moves the comma
             g_maccel_config.a = a / 10000.0f;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: STEEPNESS: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:via: GROWTHRATE: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
 #endif
             break;
         }
@@ -58,7 +58,7 @@ void maccel_config_set_value(uint8_t *data) {
             // calc uint16 to float: offset moves comma and shifts by 3, so that -3..3 fits into 0..60k
             g_maccel_config.b = (b / 10000.0f) - 3;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: steepness: %f, OFFSET: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:via: growthrate: %f, OFFSET: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
 #endif
             break;
         }
@@ -68,7 +68,7 @@ void maccel_config_set_value(uint8_t *data) {
             // calc uint16 to float: offset moves comma, divides by 2 and shifts by 1, so that 1..14 fits into 0..60k
             g_maccel_config.c = (c / 5000.0f) + 1;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: steepness: %f, offset: %f, LIMIT: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:via: growthrate: %f, offset: %f, LIMIT: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
 #endif
             break;
         }
