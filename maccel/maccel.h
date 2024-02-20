@@ -18,8 +18,6 @@
 
 #include "quantum.h"
 
-#define MACCEL_USE_KEYCODES
-
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report);
 bool           process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t takeoff, uint16_t growth_rate, uint16_t offset, uint16_t limit);
 
