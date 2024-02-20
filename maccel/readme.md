@@ -37,6 +37,8 @@ If you already have a `pointing_device_task_user` in your keymap, then add the `
 
 Lastly, if you use via, also add the `maccel_via.c` file to your keymap folder, and set `VIA_ENABLE = yes` in your `rules.mk`.
 
+---
+
 **2. Second build option for those maintaining a user space:**
 
 First, place the `maccel/` directory in `users/YOUR_USERNAME/features/` (you may omit the readme and assets).
@@ -47,7 +49,6 @@ Next, include `rules.mk` in your `rules.mk`:
 ```
 This will add `maccel.c` to your build process; additionally include `maccel_via.c` if you have via enabled.
 
----
 
 Next, `#include "maccel.h` in your keymap, and add the acceleration shim to your `pointing_device_task_user`:
 ```c
@@ -58,6 +59,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
 ```
 You may call it at the beginning if you wish to use the accelerated mouse report for your other code.
 
+---
 
 **3. Runtime parameter adjusting with custom keycodes (optional)**
 
