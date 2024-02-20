@@ -114,7 +114,7 @@ void maccel_toggle_enabled(void) {
 }
 
 #define _CONSTRAIN(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
-#define CONSTRAIN_REPORT(val) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
+#define CONSTRAIN_REPORT(val) (mouse_xy_report_t) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
@@ -138,8 +138,10 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         }
         // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
         const float dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
-        // calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
-        const float velocity = dpi_correction * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / delta_time;
+        // calculate euclidean distance moved (sqrt(x^2 + y^2))
+        const float distance = sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y);
+        // calculate delta velocity: dv = dpi_correction * distance/dt
+        const float velocity = dpi_correction * distance / delta_time;
         // calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
         float maccel_factor = g_maccel_config.limit - (g_maccel_config.limit - 1) / powf(1 + expf(g_maccel_config.takeoff * (velocity - g_maccel_config.limit)), g_maccel_config.growth_rate / g_maccel_config.takeoff);
         // calculate accelerated delta X and Y values and clamp:
@@ -148,8 +150,8 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
 
 // console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG
-        float accelerated = velocity * maccel_factor; // resulting velocity after acceleration; unneccesary for calculation, but nice for debug console
-        printf("MACCEL: DPI = %i, Start = %f, Growth = %f, Offset = %f, Limit = %f  |  Factor = %4f, Veloc.in = %4f, Veloc.out = %4f\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, accelerated);
+        const float distance_out = sqrtf(x * x + y * y);
+        printf("MACCEL: DPI:%4i Sta: %.3f Grw: %.3f Ofs: %.3f Lmt: %.3f | Fct: %.3f Vel:%.3f Dst.in:%3i Dst.out:%3i\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, CONSTRAIN_REPORT(distance), CONSTRAIN_REPORT(distance_out));
 #endif // MACCEL_DEBUG
 
         // report back accelerated values
