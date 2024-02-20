@@ -66,6 +66,9 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #endif
 
 #ifdef MACCEL_USE_KEYCODES
+#    ifndef MACCEL_TAKEOFF_STEP
+#        define MACCEL_TAKEOFF_STEP 0.01f
+#    endif
 #    ifndef MACCEL_GROWTH_RATE_STEP
 #        define MACCEL_GROWTH_RATE_STEP 0.01f
 #    endif
@@ -77,7 +80,10 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #    endif
 #endif
 
-float maccel_get_growthrate(void) {
+float maccel_get_takeoff(void) {
+    return g_maccel_config.takeoff;
+}
+float maccel_get_growth_rate(void) {
     return g_maccel_config.growth_rate;
 }
 float maccel_get_offset(void) {
@@ -86,7 +92,12 @@ float maccel_get_offset(void) {
 float maccel_get_limit(void) {
     return g_maccel_config.limit;
 }
-void maccel_set_growthrate(float val) {
+void maccel_set_takeoff(float val) {
+    if (val >= 0.5) { // value less than 0.5 leads to nonsensical results
+        g_maccel_config.takeoff = val;
+    }
+}
+void maccel_set_growth_rate(float val) {
     if (val >= 0) { // value less 0 leads to nonsensical results
         g_maccel_config.growth_rate = val;
     }
@@ -173,28 +184,33 @@ static inline float get_mod_step(float step) {
     return step;
 }
 
-bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t growthrate, uint16_t offset, uint16_t limit) {
+bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t takeoff, uint16_t growth_rate, uint16_t offset, uint16_t limit) {
     if (record->event.pressed) {
-        if (keycode == growthrate) {
-            maccel_set_growthrate(maccel_get_growthrate() + get_mod_step(MACCEL_GROWTH_RATE_STEP));
-            printf("MACCEL:keycode: growthrate: %f, offset: %f, limit: %f\n", g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
+        if (keycode == takeoff) {
+            maccel_set_takeoff(maccel_get_takeoff() + get_mod_step(MACCEL_TAKEOFF_STEP));
+            printf("MACCEL:keycode: TKO: %.3f gro: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
+            return false;
+        }
+        if (keycode == growth_rate) {
+            maccel_set_growth_rate(maccel_get_growth_rate() + get_mod_step(MACCEL_GROWTH_RATE_STEP));
+            printf("MACCEL:keycode: tko: %.3f GRO: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
             return false;
         }
         if (keycode == offset) {
             maccel_set_offset(maccel_get_offset() + get_mod_step(MACCEL_OFFSET_STEP));
-            printf("MACCEL:keycode: growthrate: %f, OFFSET: %f, limit: %f\n", g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
+            printf("MACCEL:keycode: tko: %.3f gro: %.3f OFS: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
             return false;
         }
         if (keycode == limit) {
             maccel_set_limit(maccel_get_limit() + get_mod_step(MACCEL_LIMIT_STEP));
-            printf("MACCEL:keycode: growthrate: %f, offset: %f, LIMIT: %f\n", g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
+            printf("MACCEL:keycode: tko: %.3f gro: %.3f ofs: %.3f LMT: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
             return false;
         }
     }
     return true;
 }
 #else
-bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t growthrate, uint16_t offset, uint16_t limit) {
+bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t takeoff, uint16_t growth_rate, uint16_t offset, uint16_t limit) {
     // provide a do-nothing keyrecord function so a user doesn't need to unshim when disabling the keycodes
     return true;
 }
