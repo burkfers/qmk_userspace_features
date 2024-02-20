@@ -142,8 +142,8 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         const float distance = sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y);
         // calculate delta velocity: dv = dpi_correction * distance/dt
         const float velocity = dpi_correction * distance / delta_time;
-        // calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
-        float maccel_factor = g_maccel_config.limit - (g_maccel_config.limit - 1) / powf(1 + expf(g_maccel_config.takeoff * (velocity - g_maccel_config.limit)), g_maccel_config.growth_rate / g_maccel_config.takeoff);
+        // calculate mouse acceleration factor: f(dv) = c - ((c-1) / ((1 + e^(x(x - b)) * a/z)))
+        const float maccel_factor = g_maccel_config.limit - (g_maccel_config.limit - 1) / powf(1 + expf(g_maccel_config.takeoff * (velocity - g_maccel_config.limit)), g_maccel_config.growth_rate / g_maccel_config.takeoff);
         // calculate accelerated delta X and Y values and clamp:
         const mouse_xy_report_t x = CONSTRAIN_REPORT(mouse_report.x * maccel_factor);
         const mouse_xy_report_t y = CONSTRAIN_REPORT(mouse_report.y * maccel_factor);
@@ -151,7 +151,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
 // console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG
         const float distance_out = sqrtf(x * x + y * y);
-        printf("MACCEL: DPI:%4i Sta: %.3f Grw: %.3f Ofs: %.3f Lmt: %.3f | Fct: %.3f Vel:%.3f Dst.in:%3i Dst.out:%3i\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, CONSTRAIN_REPORT(distance), CONSTRAIN_REPORT(distance_out));
+        printf("MACCEL: DPI:%4i Tko: %.3f Grw: %.3f Ofs: %.3f Lmt: %.3f | Fct: %.3f Vel:%.3f Dst.in:%3i Dst.out:%3i\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, CONSTRAIN_REPORT(distance), CONSTRAIN_REPORT(distance_out));
 #endif // MACCEL_DEBUG
 
         // report back accelerated values
