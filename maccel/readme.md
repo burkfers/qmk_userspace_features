@@ -14,6 +14,8 @@ If you do not maintain a user space (or if you don't know what that is), use thi
 First copy the `maccel.c` and `maccel.h` files into your keymap folder.
 Then in the same folder create a new file named `rules.mk` (or edit it if it already exists) and add the following code:
 ```c
+MACCEL_ENABLE = yes
+VIA_ENABLE = no //enable this if you use via
 ifeq ($(strip $(MACCEL_ENABLE)), yes)
 	SRC += ./maccel.c
 	ifeq ($(strip $(VIA_ENABLE)), yes)
@@ -33,6 +35,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
 
 If you already have a `pointing_device_task_user` in your keymap, then add the `pointing_device_task_maccel` line to that instead.
 
+Lastly, if you use via, also add the `maccel_via.c` file to your keymap folder, and set `VIA_ENABLE = yes` in your `rules.mk`.
 
 **2. Second build option for those maintaining a user space:**
 
@@ -42,8 +45,7 @@ Next, include `rules.mk` in your `rules.mk`:
 ```make
 -include $(USER_PATH)/features/maccel/rules.mk
 ```
-
-This will add `maccel.c` to your build process, and additionally include `maccel_via.c` if you have via enabled.
+This will add `maccel.c` to your build process; additionally include `maccel_via.c` if you have via enabled.
 
 ---
 
@@ -92,9 +94,11 @@ Several characteristics of the acceleration curve can be tweaked by adding relev
 #define MACCEL_OFFSET 2.2  // lower/higher value = acceleration kicks in earlier/later
 #define MACCEL_LIMIT 6.0   // upper limit of accel curve (maximum acceleration factor)
 ```
-[![](assets/accel_curve.png)](https://www.wolframalpha.com/input?i=plot+c-%28c-1%29%28e%5E%28-%28x-b%29*a%29%29+with+a%3D0.6+with+b%3D0.8+with+c%3D3.5+from+x%3D-0.1+to+10+from+y%3D-0.1+to+4.5)
-//image to be updated
-The graph above shows the acceleration curve. Interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: at the start of the curve the factor is 1, and your mouse sensitivity will be equal to your default DPI setting. At the end of the curve, the factor approaches a limit which can be set by the LIMIT variable. The limit is 6 in this example and will result in a maximum mouse sensitivity of 6 times your default DPI.
+[![](assets/accel_curve.png)](https://www.desmos.com/calculator/g6zxh5rt44)
+
+The graph above shows the acceleration curve. You can interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: at the start of the curve the factor is 1, and your mouse sensitivity will be equal to your default DPI setting. At the end of the curve, the factor approaches a limit which can be set by the LIMIT variable. The limit is 6 in this example and will result in a maximum mouse sensitivity of 6 times your default DPI.
+
+If you click on the image of the curve, you will be linked to desmos, where you can play around with the variables to understand how each of them affect the shape of the curve. But in short:
 
 The TAKEOFF variable controls how smoothly or abrubtly the acceleration curve takes off. A higher value will make it take off more abrubtly, a lower value smoothens out the start of the curve.
 
@@ -106,7 +110,7 @@ The LIMIT variable sets the upper limit for the acceleration curve. This is the 
 
 A good starting point for tweaking your settings, is to set your default DPI to what you'd normally have set your sniping DPI. Then set the LIMIT variable to a factor that results in a bit higher than your usual default DPI. For example, if my usual settings are a default DPI of 1000 and a sniping DPI of 200, I would now set my default DPI to 200, and set my LIMIT variable to 6, which will result in an equivalent DPI scaling of 200*6=1200 at the upper limit of the acceleration curve. From there you can start playing around with the variables until you arrive at something to your liking.
 
-To aid in dialing in the settings just right, a debug mode exists to print mathy details to the console. Refer to the QMK documentation on how to enable the console and debugging, then enable mouse acceleration debugging in `config.h`:
+To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. Refer to the QMK documentation on how to enable the console and debugging, then enable mouse acceleration debugging in `config.h`:
 ```c
 #define MACCEL_DEBUG
 /*
@@ -116,11 +120,12 @@ To aid in dialing in the settings just right, a debug mode exists to print mathy
 #define PRINTF_SUPPORT_DECIMAL_SPECIFIERS 1
 ```
 
-The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance. This will help understand the effect of different variable values.
-To help visualize the effect of the values, you can also use this desmos tool which plots the accel curve: https://www.desmos.com/calculator/g6zxh5rt44
+The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance.
 
 ### Runtime adjusting of curve parameters by keycodes
-//VIA README IS STILL OUT OF DATE
+
+//THIS PART TO BE UPDATED BY @finrod09
+
 Once the additional keycodes and shim are added, this feature can be enabled:
 ```
 #define MACCEL_USE_KEYCODES
