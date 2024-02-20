@@ -151,8 +151,10 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         const float dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
         // calculate euclidean distance moved (sqrt(x^2 + y^2))
         const float distance = sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y);
-        // calculate delta velocity: dv = dpi_correction * distance/dt
-        const float velocity = dpi_correction * distance / delta_time;
+        // calculate delta velocity: dv = distance/dt
+        const float velocity_raw = distance / delta_time;
+        // correct raw velocity for dpi
+        const float velocity = dpi_correction * velocity_raw;
         // calculate mouse acceleration factor: f(dv) = c - ((c-1) / ((1 + e^(x(x - b)) * a/z)))
         const float maccel_factor = g_maccel_config.limit - (g_maccel_config.limit - 1) / powf(1 + expf(g_maccel_config.takeoff * (velocity - g_maccel_config.limit)), g_maccel_config.growth_rate / g_maccel_config.takeoff);
         // calculate accelerated delta X and Y values and clamp:
@@ -162,7 +164,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
 // console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG
         const float distance_out = sqrtf(x * x + y * y);
-        printf("MACCEL: DPI:%4i Tko: %.3f Grw: %.3f Ofs: %.3f Lmt: %.3f | Fct: %.3f Vel:%.3f Dst.in:%3i Dst.out:%3i\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, CONSTRAIN_REPORT(distance), CONSTRAIN_REPORT(distance_out));
+        printf("MACCEL: DPI:%4i Tko: %.3f Grw: %.3f Ofs: %.3f Lmt: %.3f | Fct: %.3f v: %.3f vraw: %.3f Dst.in: %3i Dst.out: %3i\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, velocity_raw, CONSTRAIN_REPORT(distance), CONSTRAIN_REPORT(distance_out));
 #endif // MACCEL_DEBUG
 
         // report back accelerated values
