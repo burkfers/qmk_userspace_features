@@ -20,20 +20,33 @@
                             "content": [
                                 "id_maccel_enabled",
                                 24,
-                                4
+                                5
                             ]
                         },
                         {
-                            "label": "Steepness",
+                            "label": "Takeoff",
                             "type": "range",
                             "options": [
                                 0,
                                 60000
                             ],
                             "content": [
-                                "id_maccel_steepness",
+                                "id_maccel_takeoff",
                                 24,
                                 1
+                            ]
+                        },
+                        {
+                            "label": "Growth Rate",
+                            "type": "range",
+                            "options": [
+                                0,
+                                60000
+                            ],
+                            "content": [
+                                "id_maccel_growth_rate",
+                                24,
+                                2
                             ]
                         },
                         {
@@ -46,7 +59,7 @@
                             "content": [
                                 "id_maccel_offset",
                                 24,
-                                2
+                                3
                             ]
                         },
                         {
@@ -59,7 +72,7 @@
                             "content": [
                                 "id_maccel_limit",
                                 24,
-                                3
+                                4
                             ]
                         }
                     ]

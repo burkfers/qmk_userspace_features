@@ -26,10 +26,11 @@ enum via_maccel_channel {
 };
 enum via_maccel_ids {
     // clang-format off
-    id_maccel_growth_rate = 1,
-    id_maccel_offset      = 2,
-    id_maccel_limit       = 3,
-    id_maccel_enabled     = 4
+    id_maccel_takeoff     = 1,
+    id_maccel_growth_rate = 2,
+    id_maccel_offset      = 3,
+    id_maccel_limit       = 4,
+    id_maccel_enabled     = 5
     // clang-format on
 };
 
@@ -42,13 +43,23 @@ void maccel_config_set_value(uint8_t *data) {
     uint8_t *value_data = &(data[1]);
 
     switch (*value_id) {
+        case id_maccel_takeoff: {
+            uint16_t takeoff = COMBINE_UINT8(value_data[0], value_data[1]);
+
+            // calc uint16 to float: takeoff moves comma and shifts by 0.5, so that 0.5..6.5 fits into 0..60k
+            g_maccel_config.takeoff = (takeoff / 10000.0f) + 0.5;
+#ifdef MACCEL_DEBUG
+            printf("MACCEL:via: TKO: %.3f grw: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
+#endif
+            break;
+        }
         case id_maccel_growth_rate: {
             uint16_t growth_rate = COMBINE_UINT8(value_data[0], value_data[1]);
 
             // calc uint16 to float: growth_rate only moves the comma
             g_maccel_config.growth_rate = growth_rate / 10000.0f;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: growth_rate: %f, offset: %f, limit: %f\n", g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
+            printf("MACCEL:via: tko: %.3f GRW: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
             break;
         }
@@ -58,7 +69,7 @@ void maccel_config_set_value(uint8_t *data) {
             // calc uint16 to float: offset moves comma and shifts by 3, so that -3..3 fits into 0..60k
             g_maccel_config.offset = (offset / 10000.0f) - 3;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: growth_rate: %f, OFFSET: %f, limit: %f\n", g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
+            printf("MACCEL:via: tko: %.3f grw: %.3f OFS: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
             break;
         }
@@ -68,7 +79,7 @@ void maccel_config_set_value(uint8_t *data) {
             // calc uint16 to float: offset moves comma, divides by 2 and shifts by 1, so that 1..14 fits into 0..60k
             g_maccel_config.limit = (limit / 5000.0f) + 1;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: growth_rate: %f, offset: %f, LIMIT: %f\n", g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
+            printf("MACCEL:via: tko: %.3f grw: %.3f ofs: %.3f LMT: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
             break;
         }
@@ -86,6 +97,12 @@ void maccel_config_get_value(uint8_t *data) {
     uint8_t *value_data = &(data[1]);
 
     switch (*value_id) {
+        case id_maccel_takeoff: {
+            uint16_t takeoff = (g_maccel_config.takeoff - 0.5) * 5000;
+            value_data[0]    = takeoff >> 8;
+            value_data[1]    = takeoff & 0xFF;
+            break;
+        }
         case id_maccel_growth_rate: {
             uint16_t growth_rate = g_maccel_config.growth_rate * 10000;
             value_data[0]        = growth_rate >> 8;
