@@ -129,6 +129,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (!process_record_maccel(keycode, record, MA_TAKEOFF, MA_GROWTH_RATE, MA_OFFSET, MA_LIMIT)) {
         return false;
     }
+    /* insert your own macros here */
     return true;
 }
 ```
