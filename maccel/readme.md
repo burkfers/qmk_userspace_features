@@ -141,6 +141,8 @@ Once the additional keycodes and shim are added, this feature can be enabled in 
 #define MACCEL_USE_KEYCODES
 ```
 
+Lastly, place the new keycodes on your keymap.
+
 ---
 ### Acceleration keycode usage
 
