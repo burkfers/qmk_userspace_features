@@ -13,9 +13,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "quantum.h"
+
 #include "maccel.h"
 #include "via.h"
+#ifdef MACCEL_DEBUG
+#    include "debug.h" // IWYU pragma: keep
+#endif
 
 _Static_assert(sizeof(maccel_config_t) == EECONFIG_USER_DATA_SIZE, "Mismatch in keyboard EECONFIG stored data");
 
