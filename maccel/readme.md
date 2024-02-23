@@ -175,7 +175,7 @@ Mouse acceleration can now be configured though via. If your keyboard is not alr
 
 Add to `rules.mk`, *before* the include added previously:
 ```make
-VIA_MACCEL_ENABLE = yes
+MACCEL_VIA_ENABLE = yes
 ``````
 
 Add a shim to `keyboard_post_init_user`:
