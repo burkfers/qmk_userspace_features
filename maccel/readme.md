@@ -4,60 +4,71 @@ This feature was born from the frustration of not having a tweakable acceleratio
 
 ## Installation
 
-You have 2 options of how to build it.
+### Installation (keymap)
 
+Choose this route if you do not maintain a userspace.
 
-**1. First build option:**
+Place the `maccel` directory in your keymap directory. For example, if you were using the `via` keymap on a BastardKB Dilemma Max, you'd place it to be `keyboards/bastardkb/dilemma/4x6_4/keymaps/via/maccel/`.
 
-If you do not maintain a user space (or if you don't know what that is), use this build option.
-
-First copy the `maccel.c` and `maccel.h` files into your keymap folder.
-Then in the same folder create a new file named `rules.mk` (or edit it if it already exists) and add the following code:
-```c
-MACCEL_ENABLE = yes
-VIA_ENABLE = no //enable this if you use via
-ifeq ($(strip $(MACCEL_ENABLE)), yes)
-	SRC += ./maccel.c
-	ifeq ($(strip $(VIA_ENABLE)), yes)
-		SRC += ./maccel_via.c
-	endif
-	OPT_DEFS += -DMACCEL_ENABLE
-endif
-```
-Then simply add the following code at the top of your keymap.c file:
-```c
-#include "maccel.h"
-
-report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
-    return pointing_device_task_maccel(mouse_report);
-}
-```
-
-If you already have a `pointing_device_task_user` in your keymap, then add the `pointing_device_task_maccel` line to that instead.
-
-Lastly, if you use via, also add the `maccel_via.c` file to your keymap folder, and set `VIA_ENABLE = yes` in your `rules.mk`.
-
----
-
-**2. Second build option for those maintaining a user space:**
-
-First, place the `maccel/` directory in `users/YOUR_USERNAME/features/` (you may omit the readme and assets).
-
-Next, include `rules.mk` in your `rules.mk`:
+Add to `rules.mk` (Create it if it does not exist):
 ```make
--include $(USER_PATH)/features/maccel/rules.mk
+# MACCEL
+SRC += ./maccel/maccel.c
+ifeq ($(strip $(VIA_ENABLE)), yes)
+	ifeq ($(strip $(MACCEL_VIA_ENABLE)), yes)
+		SRC += ./maccel/maccel_via.c
+	endif
+endif
+OPT_DEFS += -DMACCEL_ENABLE
 ```
-This will add `maccel.c` to your build process; additionally include `maccel_via.c` if you have via enabled.
 
+Add to your `keymap.c`, near the top:
+```c
+#ifdef MACCEL_ENABLE
+    #include "maccel/maccel.h"
+#endif
+```
 
-Next, `#include "maccel.h` in your keymap, and add the acceleration shim to your `pointing_device_task_user`:
+Continue with "Installation (common)", below.
+
+### Installation (userspace)
+
+Choose this route if you maintain a userspace.
+
+Place the `maccel` directory within `features/` in your userspace. For example, if your username was burkfers, you'd place it to be `users/burkfers/features/maccel/`.
+
+Add to `rules.mk` in the top level of your userspace (Create it if not present):
+
+```make
+MACCEL_ENABLE = yes
+
+include $(USER_PATH)/features/maccel/rules.mk
+```
+
+You may instead place `MACCEL_ENABLE = yes` in your keymap's `rules.mk` if you wish to only enable maccel for some boards.
+
+Add to your userspace source file, near the top:
+```c
+#ifdef MACCEL_ENABLE
+    #include "features/maccel/maccel.h"
+#endif
+```
+
+Continue with "Installation (common)", below.
+
+### Installation (common)
+
+Add to `pointing_device_task_user` in `keymap.c` or your userspace source file (paste the whole function if it did not exist):
 ```c
 report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
     // ...
+#ifdef MACCEL_ENABLE
     return pointing_device_task_maccel(mouse_report);
+#endif
 }
 ```
-You may call it at the beginning if you wish to use the accelerated mouse report for your other code.
+
+See the section on runtime adjusting by keycodes and on via support for installation steps for these optional features.
 
 ## Configuration
 
@@ -86,7 +97,7 @@ The LIMIT variable sets the upper limit for the acceleration curve. This is the 
 
 A good starting point for tweaking your settings, is to set your default DPI to what you'd normally have set your sniping DPI. Then set the LIMIT variable to a factor that results in a bit higher than your usual default DPI. For example, if my usual settings are a default DPI of 1000 and a sniping DPI of 200, I would now set my default DPI to 200, and set my LIMIT variable to 6, which will result in an equivalent DPI scaling of 200*6=1200 at the upper limit of the acceleration curve. From there you can start playing around with the variables until you arrive at something to your liking.
 
-To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. Refer to the QMK documentation on how to enable the console and debugging, then enable mouse acceleration debugging in `config.h`:
+To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. Refer to the QMK documentation on how to *enable the console and debugging*, then enable mouse acceleration debugging in `config.h`:
 ```c
 #define MACCEL_DEBUG
 /*
@@ -100,15 +111,14 @@ The debug console will print your current DPI setting and variable settings, as 
 
 ## Runtime adjusting of curve parameters by keycodes (optional)
 
-//THIS PART TO BE UPDATED BY @finrod09
-
-**Build process for maccel keycodes**
+### Additional required installation steps
 
 To use keycodes to adjust the parameters without recompiling, two more build steps are required.
-First, add three keycodes to your keycode enum. You may choose different names, as long as you use the same names in the following step. If you are not yet using custom keycodes, add the following snippet to `keymap.c`:
+First, add four keycodes to your keycode enum. You may choose different names, as long as you use the same names in the following step. If you are not yet using custom keycodes, add the following snippet to `keymap.c`:
 ```c
 enum my_keycodes {
-    MA_STEEPNESS = QK_USER, // mouse acceleration curve steepness step key
+    MA_TAKEOFF = QK_USER,   // mouse acceleration curve takeoff (initial acceleration) step key
+    MA_GROWTH_RATE,         // mouse acceleration curve growth rate step key
     MA_OFFSET,              // mouse acceleration curve offset step key
     MA_LIMIT,               // mouse acceleration curve limit step key
 };
@@ -116,7 +126,7 @@ enum my_keycodes {
 Next, add another shim, this time to `process_record_user`. If you have not previously implemented this function, simply place the following snippet in your `keymap.c`:
 ```c
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (!process_record_maccel(keycode, record, MA_STEEPNESS, MA_OFFSET, MA_LIMIT)) {
+    if (!process_record_maccel(keycode, record, MA_TAKEOFF, MA_GROWTH_RATE, MA_OFFSET, MA_LIMIT)) {
         return false;
     }
     return true;
@@ -126,22 +136,23 @@ Take care to use the same names that you used in the previous step.
 
 See the configuration section on how to enable this feature once you have set it up.
 
-Once the additional keycodes and shim are added, this feature can be enabled:
+Once the additional keycodes and shim are added, this feature can be enabled in `config.h`:
 ```
 #define MACCEL_USE_KEYCODES
 ```
 
 ---
-**Using maccel keycodes**
+### Acceleration keycode usage
 
-The three keycodes can be used to adjust the curve parameters. This is currently *not* persisted - Adjusted values are printed to the console to aid in finding the right settings for `config.h`.
+The four keycodes can be used to adjust the curve parameters. This is *not* persisted unless you also enabled the via option - Adjusted values are printed to the console to aid in finding the right settings for `config.h`.
 The step keys will adjust the parameters by the following amounts, which can optionally be adjusted:
 
-| Parameter | Default step value | Define name             |
-| ---       | ---                | ---                     |
-| Steepness | `+0.01`            | `MACCEL_STEEPNESS_STEP` |
-| Offset    | `+0.1`             | `MACCEL_OFFSET_STEP`    |
-| Limit     | `+0.1`             | `MACCEL_LIMIT_STEP`     |
+| Parameter    | Default step value | Define name               |
+| ---          | ---                | ---                       |
+| Takeoff      | `+0.01`            | `MACCEL_TAKEOFF_STEP`     |
+| Growth rate  | `+0.01`            | `MACCEL_GROWTH_RATE_STEP` |
+| Offset       | `+0.1`             | `MACCEL_OFFSET_STEP`      |
+| Limit        | `+0.1`             | `MACCEL_LIMIT_STEP`       |
 
 The modifier keys can be used to alter the step effect:
 
@@ -160,9 +171,12 @@ With every adjustment, an informational message is printed to the console.
 
 Mouse acceleration can now be configured though via. If your keyboard is not already supported by via, you must first [create a via definition](https://www.caniusevia.com/docs/specification).
 
-To begin, ensure `maccel_via.c` is included in your build process. The provided `rules.mk` will do this for you if via is enabled on your board.
+Add to `rules.mk`, *before* the include added previously:
+```make
+VIA_MACCEL_ENABLE = yes
+``````
 
-Next, shim `keyboard_post_init_user`:
+Add a shim to `keyboard_post_init_user`:
 ```c
 void keyboard_post_init_user(void) {
     keyboard_post_init_maccel();
@@ -173,7 +187,7 @@ Add the entire function to your keymap if not already present, or insert the cal
 
 You must also configure the size of the EEPROM user block by placing the following define in `config.h`:
 ```c
-#define EECONFIG_USER_DATA_SIZE 16
+#define EECONFIG_USER_DATA_SIZE 20
 ```
 
 Please be aware of the following caveats:
@@ -194,9 +208,10 @@ Finally, after flashing the firmware to your board, load the custom via definiti
 - Add configuration defines for parameters and optionally debugging
 - Optional: Config keycodes:
   - Enable keycode support by define
-  - Create three keycodes in the keycode enum
+  - Create four keycodes in the keycode enum
   - Shim `process_record_user`
 - Optional: VIA support:
+  - Enable in `rules.mk`
   - Shim `keyboard_post_init_user`
   - Set user eeprom data block size
   - Create custom via json and sideload it in the web app
@@ -211,13 +226,15 @@ With an unfavorable combination of `POINTING_DEVICE_THROTTLE_MS` and higher DPI,
 The maccel feature has so far only been properly tested with PMW3360 sensor. However, it should work fine with all other QMK compatible sensors and devices as well, but the behaviour may not be 100% consistent across different DPI settings. Hence it might be a bit harder to dial in your variable preferences for those devices. This is due to a device-specific parameter in the calculations, that hasn't yet been determined for other devices than the PMW3360 sensor.
 
 ## Release history
+- 2024 February 23 - New four-parameter acceleration curve and improved documentation
 - 2024 February 07 - Experimental new DPI correction to achieve consistent acceleration behavior across different user DPI settings.
 - 2024 February 06 - First release candidate. Feedback welcome!
 
 ## Credits
 Thanks to everyone who helped!
-Including:
+Including, but not limited to:
 - Wimads (@wimads) and burkfers (@burkfers) wrote most of the code
 - Quentin (@balanstik) for insightful commentary on the math, and testing
 - ouglop (@ouglop) for insightful commentary on the math
 - Drashna Jael're (@drashna) for coding tips and their invaluable bag of magic C tricks
+- ankostis (@ankostis) for catalysing discussion about improving the acceleration curve
