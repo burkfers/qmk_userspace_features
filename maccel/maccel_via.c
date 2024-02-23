@@ -13,9 +13,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "quantum.h"
+
 #include "maccel.h"
 #include "via.h"
+#ifdef MACCEL_DEBUG
+#    include "debug.h" // IWYU pragma: keep
+#endif
 
 _Static_assert(sizeof(maccel_config_t) == EECONFIG_USER_DATA_SIZE, "Mismatch in keyboard EECONFIG stored data");
 
@@ -26,10 +29,11 @@ enum via_maccel_channel {
 };
 enum via_maccel_ids {
     // clang-format off
-    id_maccel_a       = 1,
-    id_maccel_b       = 2,
-    id_maccel_c       = 3,
-    id_maccel_enabled = 4
+    id_maccel_takeoff     = 1,
+    id_maccel_growth_rate = 2,
+    id_maccel_offset      = 3,
+    id_maccel_limit       = 4,
+    id_maccel_enabled     = 5
     // clang-format on
 };
 
@@ -42,33 +46,43 @@ void maccel_config_set_value(uint8_t *data) {
     uint8_t *value_data = &(data[1]);
 
     switch (*value_id) {
-        case id_maccel_a: {
-            uint16_t a = COMBINE_UINT8(value_data[0], value_data[1]);
+        case id_maccel_takeoff: {
+            uint16_t takeoff = COMBINE_UINT8(value_data[0], value_data[1]);
 
-            // calc uint16 to float: steepness only moves the comma
-            g_maccel_config.a = a / 10000.0f;
+            // calc uint16 to float: takeoff moves comma and shifts by 0.5, so that 0.5..6.5 fits into 0..60k
+            g_maccel_config.takeoff = (takeoff / 10000.0f) + 0.5;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: STEEPNESS: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:via: TKO: %.3f grw: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
             break;
         }
-        case id_maccel_b: {
-            uint16_t b = COMBINE_UINT8(value_data[0], value_data[1]);
+        case id_maccel_growth_rate: {
+            uint16_t growth_rate = COMBINE_UINT8(value_data[0], value_data[1]);
+
+            // calc uint16 to float: growth_rate only moves the comma
+            g_maccel_config.growth_rate = growth_rate / 10000.0f;
+#ifdef MACCEL_DEBUG
+            printf("MACCEL:via: tko: %.3f GRW: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
+#endif
+            break;
+        }
+        case id_maccel_offset: {
+            uint16_t offset = COMBINE_UINT8(value_data[0], value_data[1]);
 
             // calc uint16 to float: offset moves comma and shifts by 3, so that -3..3 fits into 0..60k
-            g_maccel_config.b = (b / 10000.0f) - 3;
+            g_maccel_config.offset = (offset / 10000.0f) - 3;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: steepness: %f, OFFSET: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:via: tko: %.3f grw: %.3f OFS: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
             break;
         }
-        case id_maccel_c: {
-            uint16_t c = COMBINE_UINT8(value_data[0], value_data[1]);
+        case id_maccel_limit: {
+            uint16_t limit = COMBINE_UINT8(value_data[0], value_data[1]);
 
             // calc uint16 to float: offset moves comma, divides by 2 and shifts by 1, so that 1..14 fits into 0..60k
-            g_maccel_config.c = (c / 5000.0f) + 1;
+            g_maccel_config.limit = (limit / 5000.0f) + 1;
 #ifdef MACCEL_DEBUG
-            printf("MACCEL:via: steepness: %f, offset: %f, LIMIT: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:via: tko: %.3f grw: %.3f ofs: %.3f LMT: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
             break;
         }
@@ -86,22 +100,28 @@ void maccel_config_get_value(uint8_t *data) {
     uint8_t *value_data = &(data[1]);
 
     switch (*value_id) {
-        case id_maccel_a: {
-            uint16_t a    = g_maccel_config.a * 10000;
-            value_data[0] = a >> 8;
-            value_data[1] = a & 0xFF;
+        case id_maccel_takeoff: {
+            uint16_t takeoff = (g_maccel_config.takeoff - 0.5) * 5000;
+            value_data[0]    = takeoff >> 8;
+            value_data[1]    = takeoff & 0xFF;
             break;
         }
-        case id_maccel_b: {
-            uint16_t b    = (g_maccel_config.b + 3) * 10000;
-            value_data[0] = b >> 8;
-            value_data[1] = b & 0xFF;
+        case id_maccel_growth_rate: {
+            uint16_t growth_rate = g_maccel_config.growth_rate * 10000;
+            value_data[0]        = growth_rate >> 8;
+            value_data[1]        = growth_rate & 0xFF;
             break;
         }
-        case id_maccel_c: {
-            uint16_t c    = (g_maccel_config.c - 1) * 5000;
-            value_data[0] = c >> 8;
-            value_data[1] = c & 0xFF;
+        case id_maccel_offset: {
+            uint16_t offset = (g_maccel_config.offset + 3) * 10000;
+            value_data[0]   = offset >> 8;
+            value_data[1]   = offset & 0xFF;
+            break;
+        }
+        case id_maccel_limit: {
+            uint16_t limit = (g_maccel_config.limit - 1) * 5000;
+            value_data[0]  = limit >> 8;
+            value_data[1]  = limit & 0xFF;
             break;
         }
         case id_maccel_enabled: {

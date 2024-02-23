@@ -14,28 +14,33 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "quantum.h"
-#include "math.h"
+
+#include "quantum.h" // IWYU pragma: keep
 #include "maccel.h"
+#include "math.h"
 
 static uint32_t maccel_timer;
 
-#ifndef MACCEL_STEEPNESS
-#    define MACCEL_STEEPNESS 0.4 // steepness of accel curve
+#ifndef MACCEL_TAKEOFF
+#    define MACCEL_TAKEOFF 2.0 // lower/higher value = curve starts more smoothly/abrubtly
+#endif
+#ifndef MACCEL_GROWTH_RATE
+#    define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster
 #endif
 #ifndef MACCEL_OFFSET
-#    define MACCEL_OFFSET 1.1 // start offset of accel curve
+#    define MACCEL_OFFSET 2.2 // lower/higher value = acceleration kicks in earlier/later
 #endif
 #ifndef MACCEL_LIMIT
-#    define MACCEL_LIMIT 4.5 // upper limit of accel curve
+#    define MACCEL_LIMIT 6.0 // upper limit of accel curve (maximum acceleration factor)
 #endif
 
 maccel_config_t g_maccel_config = {
     // clang-format off
-    .a = MACCEL_STEEPNESS,
-    .b = MACCEL_OFFSET,
-    .c = MACCEL_LIMIT,
-    .enabled = true
+    .growth_rate =  MACCEL_GROWTH_RATE,
+    .offset =       MACCEL_OFFSET,
+    .limit =        MACCEL_LIMIT,
+    .takeoff =      MACCEL_TAKEOFF,
+    .enabled =      true
     // clang-format on
 };
 
@@ -62,8 +67,11 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #endif
 
 #ifdef MACCEL_USE_KEYCODES
-#    ifndef MACCEL_STEEPNESS_STEP
-#        define MACCEL_STEEPNESS_STEP 0.01f
+#    ifndef MACCEL_TAKEOFF_STEP
+#        define MACCEL_TAKEOFF_STEP 0.01f
+#    endif
+#    ifndef MACCEL_GROWTH_RATE_STEP
+#        define MACCEL_GROWTH_RATE_STEP 0.01f
 #    endif
 #    ifndef MACCEL_OFFSET_STEP
 #        define MACCEL_OFFSET_STEP 0.1f
@@ -73,26 +81,34 @@ A device specific parameter required to ensure consistent acceleration behaviour
 #    endif
 #endif
 
-float maccel_get_steepness(void) {
-    return g_maccel_config.a;
+float maccel_get_takeoff(void) {
+    return g_maccel_config.takeoff;
+}
+float maccel_get_growth_rate(void) {
+    return g_maccel_config.growth_rate;
 }
 float maccel_get_offset(void) {
-    return g_maccel_config.b;
+    return g_maccel_config.limit;
 }
 float maccel_get_limit(void) {
-    return g_maccel_config.c;
+    return g_maccel_config.limit;
 }
-void maccel_set_steepness(float val) {
+void maccel_set_takeoff(float val) {
+    if (val >= 0.5) { // value less than 0.5 leads to nonsensical results
+        g_maccel_config.takeoff = val;
+    }
+}
+void maccel_set_growth_rate(float val) {
     if (val >= 0) { // value less 0 leads to nonsensical results
-        g_maccel_config.a = val;
+        g_maccel_config.growth_rate = val;
     }
 }
 void maccel_set_offset(float val) {
-    g_maccel_config.b = val;
+    g_maccel_config.limit = val;
 }
 void maccel_set_limit(float val) {
     if (val >= 1) { // limit less than 1 leads to nonsensical results
-        g_maccel_config.c = val;
+        g_maccel_config.limit = val;
     }
 }
 
@@ -110,7 +126,7 @@ void maccel_toggle_enabled(void) {
 }
 
 #define _CONSTRAIN(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
-#define CONSTRAIN_REPORT(val) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
+#define CONSTRAIN_REPORT(val) (mouse_xy_report_t) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if (mouse_report.x != 0 || mouse_report.y != 0) {
@@ -134,21 +150,23 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         }
         // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
         const float dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
-        // calculate delta velocity: dv = dpi_correction * sqrt(dx^2 + dy^2)/dt
-        const float velocity = dpi_correction * (sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y)) / delta_time;
-        // calculate mouse acceleration factor: f(dv) = c - (c - 1) * e^(-(dv - b) * a)
-        float maccel_factor = g_maccel_config.c - (g_maccel_config.c - 1) * expf(-1 * (velocity - g_maccel_config.b) * g_maccel_config.a);
-        if (maccel_factor <= 1) { // cut-off acceleration curve below maccel_factor = 1
-            maccel_factor = 1;
-        }
+        // calculate euclidean distance moved (sqrt(x^2 + y^2))
+        const float distance = sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y);
+        // calculate delta velocity: dv = distance/dt
+        const float velocity_raw = distance / delta_time;
+        // correct raw velocity for dpi
+        const float velocity = dpi_correction * velocity_raw;
+        // calculate mouse acceleration factor: f(dv) = c - ((c-1) / ((1 + e^(x(x - b)) * a/z)))
+        const float maccel_factor = g_maccel_config.limit - (g_maccel_config.limit - 1) / powf(1 + expf(g_maccel_config.takeoff * (velocity - g_maccel_config.limit)), g_maccel_config.growth_rate / g_maccel_config.takeoff);
         // calculate accelerated delta X and Y values and clamp:
         const mouse_xy_report_t x = CONSTRAIN_REPORT(mouse_report.x * maccel_factor);
         const mouse_xy_report_t y = CONSTRAIN_REPORT(mouse_report.y * maccel_factor);
 
 // console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG
-        float accelerated = velocity * maccel_factor; // resulting velocity after acceleration; unneccesary for calculation, but nice for debug console
-        printf("MACCEL: DPI = %i, Steepn. = %f, Offset = %f, Limit = %f  |  Factor = %4f, Veloc.in = %4f, Veloc.out = %4f\n", device_cpi, g_maccel_config.a, g_maccel_config.b, g_maccel_config.c,  maccel_factor, velocity, accelerated);
+        const float distance_out = sqrtf(x * x + y * y);
+        const float velocity_out = velocity * maccel_factor;
+        printf("MACCEL: DPI:%4i Tko: %.3f Grw: %.3f Ofs: %.3f Lmt: %.3f | Fct: %.3f v.in: %.3f v.out: %.3f d.in: %3i d.out: %3i\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, velocity_out, CONSTRAIN_REPORT(distance), CONSTRAIN_REPORT(distance_out));
 #endif // MACCEL_DEBUG
 
         // report back accelerated values
@@ -170,28 +188,33 @@ static inline float get_mod_step(float step) {
     return step;
 }
 
-bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit) {
+bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t takeoff, uint16_t growth_rate, uint16_t offset, uint16_t limit) {
     if (record->event.pressed) {
-        if (keycode == steepness) {
-            maccel_set_steepness(maccel_get_steepness() + get_mod_step(MACCEL_STEEPNESS_STEP));
-            printf("MACCEL:keycode: STEEPNESS: %f, offset: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+        if (keycode == takeoff) {
+            maccel_set_takeoff(maccel_get_takeoff() + get_mod_step(MACCEL_TAKEOFF_STEP));
+            printf("MACCEL:keycode: TKO: %.3f gro: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
+            return false;
+        }
+        if (keycode == growth_rate) {
+            maccel_set_growth_rate(maccel_get_growth_rate() + get_mod_step(MACCEL_GROWTH_RATE_STEP));
+            printf("MACCEL:keycode: tko: %.3f GRO: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
             return false;
         }
         if (keycode == offset) {
             maccel_set_offset(maccel_get_offset() + get_mod_step(MACCEL_OFFSET_STEP));
-            printf("MACCEL:keycode: steepness: %f, OFFSET: %f, limit: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:keycode: tko: %.3f gro: %.3f OFS: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
             return false;
         }
         if (keycode == limit) {
             maccel_set_limit(maccel_get_limit() + get_mod_step(MACCEL_LIMIT_STEP));
-            printf("MACCEL:keycode: steepness: %f, offset: %f, LIMIT: %f\n", g_maccel_config.a, g_maccel_config.b, g_maccel_config.c);
+            printf("MACCEL:keycode: tko: %.3f gro: %.3f ofs: %.3f LMT: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
             return false;
         }
     }
     return true;
 }
 #else
-bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t steepness, uint16_t offset, uint16_t limit) {
+bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t takeoff, uint16_t growth_rate, uint16_t offset, uint16_t limit) {
     // provide a do-nothing keyrecord function so a user doesn't need to unshim when disabling the keycodes
     return true;
 }
