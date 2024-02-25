@@ -76,10 +76,10 @@ This accel curve works in opposite direction from what you may be used to from o
 
 Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
 ```c
-#define MACCEL_TAKEOFF 2.0 // lower/higher value = curve takes off more smoothly/abrubtly
-#define MACCEL_GROWTH 0.25 // lower/higher value = curve reaches its upper limit slower/faster 
-#define MACCEL_OFFSET 2.2  // lower/higher value = acceleration kicks in earlier/later
-#define MACCEL_LIMIT 6.0   // upper limit of accel curve (maximum acceleration factor)
+#define MACCEL_TAKEOFF 2.0      // lower/higher value = curve takes off more smoothly/abrubtly
+#define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster 
+#define MACCEL_OFFSET 2.2       // lower/higher value = acceleration kicks in earlier/later
+#define MACCEL_LIMIT 6.0        // upper limit of accel curve (maximum acceleration factor)
 ```
 [![](assets/accel_curve.png)](https://www.desmos.com/calculator/g6zxh5rt44)
 
