@@ -199,7 +199,13 @@ Please be aware of the following caveats:
 
 Create a custom via definition: Find your keyboard's via definition in the [via keyboards repository](https://github.com/the-via/keyboards/tree/master/v3) if you did not create your own.
 
-Extend its `menus` configuration by placing the [menu definition](assets/via.json) on the `menu` node. Completed examples are provided for the BastardKB [Charybdis Nano](assets/cnano.json), [Dilemma v2](assets/dilemma_v2.json) and [Dilemma Max](assets/dilemma_max.json).
+Extend its `menus` configuration by placing the [menu definition](assets/via.json) on the `menu` node. Completed examples are provided for these keyboards:
+
+- [Charybdis 3x5](assets/charybdis_3x5.json)
+- [Charybdis 3x6](assets/charybdis_3x6.json)
+- [Charybdis 4x6](assets/charybdis_4x6.json)
+- [Dilemma v2](assets/dilemma_v2.json)
+- [Dilemma Max](assets/dilemma_max.json)
 
 Finally, after flashing the firmware to your board, load the custom via definition in the design tab in [via](https://usevia.app)
 
