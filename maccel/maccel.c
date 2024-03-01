@@ -20,7 +20,9 @@ static uint32_t maccel_timer;
 #ifndef MACCEL_LIMIT
 #    define MACCEL_LIMIT 6.0 // upper limit of accel curve (maximum acceleration factor)
 #endif
-#define MACCEL_CPI_THROTTLE_MS 200 // milliseconds to wait between requesting the device's current DPI
+#ifndef MACCEL_CPI_THROTTLE_MS
+#   define MACCEL_CPI_THROTTLE_MS 200 // milliseconds to wait between requesting the device's current DPI
+#endif
 
 maccel_config_t g_maccel_config = {
     // clang-format off
