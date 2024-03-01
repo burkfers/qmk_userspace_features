@@ -136,14 +136,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         // get device cpi setting, only call when mouse hasn't moved since more than 200ms
         static uint16_t device_cpi = 300;
         if (delta_time > 200) {
-#ifdef POINTING_DEVICE_DRIVER_azoteq_iqs5xx
-            wait_ms(2);
-#endif // POINTING_DEVICE_DRIVER_azoteq_iqs5xx
             device_cpi = pointing_device_get_cpi();
-#ifdef POINTING_DEVICE_DRIVER_pmw3360
-            // janky bug-fix for PMW3360
-            pointing_device_set_cpi(device_cpi);
-#endif // POINTING_DEVICE_DRIVER_pmw3360
         }
         // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
         const float dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
