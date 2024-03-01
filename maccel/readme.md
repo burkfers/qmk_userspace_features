@@ -234,7 +234,21 @@ With an unfavorable combination of `POINTING_DEVICE_THROTTLE_MS` and higher DPI,
 
 The maccel feature has so far only been properly tested with PMW3360 sensor. However, it should work fine with all other QMK compatible sensors and devices as well, but the behaviour may not be 100% consistent across different DPI settings. Hence it might be a bit harder to dial in your variable preferences for those devices. This is due to a device-specific parameter in the calculations, that hasn't yet been determined for other devices than the PMW3360 sensor.
 
+This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. Tested only on RP2040!
+
+## Breaking changes
+
+### 2024 March 1
+
+If you're updating from a previous version, you will have to make manual adjustments to your integration. Refer to the instructions for details on what the current version expects:
+- The parameters have changed names and were expanded:
+  - `STEEPNESS` is now `GROWTH_RATE`, `TAKEOFF` was added
+    - Change the define names in your `config.h` for the parameter settings and step settings (if applicable)
+    - If using keycodes: Change the shim in `process_record_user` to call a fourth keycode
+- If using via: Clear EEPROM and use a new via json. Do NOT load a previous via backup without adjusting the maccel values to the new format!
+
 ## Release history
+- 2024 March 1 - Release of new four-parameter acceleration curve
 - 2024 February 23 - New four-parameter acceleration curve and improved documentation
 - 2024 February 07 - Experimental new DPI correction to achieve consistent acceleration behavior across different user DPI settings.
 - 2024 February 06 - First release candidate. Feedback welcome!
