@@ -48,18 +48,15 @@ maccel_config_t g_maccel_config = {
 A device specific parameter required to ensure consistent acceleration behaviour across different devices and user dpi settings.
  * PMW3360: 0.087
  * PMW3389: tbd
- * Cirque: tbd
+ * Cirque: 0.087
  * Azoteq: tbd
 *///disclaimer: values guesstimated by scientifically questionable emperical testing
 // Slightly hacky method of detecting which driver is loaded
 #if !defined(DEVICE_CPI_PARAM)
-// #    if defined(PMW33XX_FIRMWARE_LENGTH)
 #    if defined(POINTING_DEVICE_DRIVER_pmw3360)
 #        define DEVICE_CPI_PARAM 0.087
 #    elif defined(POINTING_DEVICE_DRIVER_cirque_pinnacle_spi)
 #        define DEVICE_CPI_PARAM 0.087
-#    elif defined(POINTING_DEVICE_DRIVER_azoteq_iqs5xx)
-#        define DEVICE_CPI_PARAM 1
 #    else
 #        warning "Unsupported pointing device driver! Please manually set the scaling parameter DEVICE_CPI_PARAM to achieve a consistent acceleration curve!"
 #        define DEVICE_CPI_PARAM 0.087
