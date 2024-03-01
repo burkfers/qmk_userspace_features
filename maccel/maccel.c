@@ -33,6 +33,7 @@ static uint32_t maccel_timer;
 #ifndef MACCEL_LIMIT
 #    define MACCEL_LIMIT 6.0 // upper limit of accel curve (maximum acceleration factor)
 #endif
+#define MACCEL_CPI_THROTTLE_MS 200 // milliseconds to wait between requesting the device's current DPI
 
 maccel_config_t g_maccel_config = {
     // clang-format off
@@ -135,7 +136,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         maccel_timer              = timer_read32();
         // get device cpi setting, only call when mouse hasn't moved since more than 200ms
         static uint16_t device_cpi = 300;
-        if (delta_time > 200) {
+        if (delta_time > GET_CPI_THROTTLE_MS) {
             device_cpi = pointing_device_get_cpi();
         }
         // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
