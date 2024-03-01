@@ -247,6 +247,8 @@ If you're updating from a previous version, you will have to make manual adjustm
     - If using keycodes: Change the shim in `process_record_user` to call a fourth keycode
 - If using via: Clear EEPROM and use a new via json. Do NOT load a previous via backup without adjusting the maccel values to the new format!
 
+If you set GROWTH_RATE to your previous value of `STEEPNESS` and keep `TAKEOFF` at a high value (eg. `10`), the behavior will be similar to previous versions.
+
 ## Release history
 - 2024 March 1 - Release of new four-parameter acceleration curve
 - 2024 February 23 - New four-parameter acceleration curve and improved documentation
