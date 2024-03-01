@@ -131,8 +131,8 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
             return mouse_report;
         }
         // time since last mouse report:
-        uint16_t delta_time = timer_elapsed32(maccel_timer);
-        maccel_timer        = timer_read32();
+        const uint16_t delta_time = timer_elapsed32(maccel_timer);
+        maccel_timer              = timer_read32();
         // get device cpi setting, only call when mouse hasn't moved since more than 200ms
         static uint16_t device_cpi = 300;
         if (delta_time > 200) {
