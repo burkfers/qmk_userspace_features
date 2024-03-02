@@ -72,7 +72,7 @@ See the section on runtime adjusting by keycodes and on via support for installa
 
 ## Configuration
 
-This accel curve works in opposite direction from what you may be used to from other acceleration tools, due to technical limitations in QMK. It scales pointer sensitivity upwards rather than downwards, which means you will either have to lower your device DPI setting from what you'd normally do, or lower your mouse-speed in OS's settings, or both.
+This accel curve works in opposite direction from what you may be used to from other acceleration tools, due to technical limitations in QMK. It scales pointer sensitivity upwards rather than downwards, which means you will either have to lower your device DPI setting from what you'd normally do, or lower your mouse speed in your operating system's settings, or both.
 
 Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
 ```c
@@ -113,7 +113,7 @@ Finally, linearity across diferrent user-CPI settings works better when pointer 
 is enforced, ie. add something like this in your `config.h`:
 
 ```c
-// Fixed pointer-task frequency needed for consitent acceleration across different user-CPIs.
+// Fixed pointer-task frequency needed for consistent acceleration across different user CPIs.
 #undef  POINTING_DEVICE_TASK_THROTTLE_MS
 #define POINTING_DEVICE_TASK_THROTTLE_MS 5
 ``` 
