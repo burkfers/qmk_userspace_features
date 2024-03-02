@@ -9,16 +9,16 @@
 static uint32_t maccel_timer;
 
 #ifndef MACCEL_TAKEOFF
-#    define MACCEL_TAKEOFF 2.0 // lower/higher value = curve starts more smoothly/abruptly
+#    define MACCEL_TAKEOFF 2.0 // (K) lower/higher value = curve starts more smoothly/abruptly
 #endif
 #ifndef MACCEL_GROWTH_RATE
-#    define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster
+#    define MACCEL_GROWTH_RATE 0.25 // (G) lower/higher value = curve reaches its upper limit slower/faster
 #endif
 #ifndef MACCEL_OFFSET
-#    define MACCEL_OFFSET 2.2 // lower/higher value = acceleration kicks in earlier/later
+#    define MACCEL_OFFSET 2.2 // (S) lower/higher value = acceleration kicks in earlier/later
 #endif
 #ifndef MACCEL_LIMIT
-#    define MACCEL_LIMIT 0.2 // lower limit of accel curve (minimum acceleration factor)
+#    define MACCEL_LIMIT 0.2 // (M) lower limit of accel curve (minimum acceleration factor)
 #endif
 #ifndef MACCEL_CPI_THROTTLE_MS
 #    define MACCEL_CPI_THROTTLE_MS 200 // milliseconds to wait between requesting the device's current DPI
