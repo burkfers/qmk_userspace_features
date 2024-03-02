@@ -109,6 +109,15 @@ To aid in dialing in your settings just right, a debug mode exists to print math
 
 The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance.
 
+Finally, linearity across diferrent user-CPI settings works better when pointer task throttling
+is enforced, ie. add something like this in your `config.h`:
+
+```c
+// Fixed pointer-task frequency needed for consitent acceleration across different user-CPIs.
+#undef  POINTING_DEVICE_TASK_THROTTLE_MS
+#define POINTING_DEVICE_TASK_THROTTLE_MS 5
+``` 
+
 ## Runtime adjusting of curve parameters by keycodes (optional)
 
 ### Additional required installation steps
