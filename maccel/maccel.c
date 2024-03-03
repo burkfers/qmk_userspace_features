@@ -5,8 +5,10 @@
 #include "quantum.h" // IWYU pragma: keep
 #include "maccel.h"
 #include "math.h"
+#include "chsys.h"
 
-static uint32_t maccel_timer;
+// static uint32_t maccel_timer;
+static float maccel_timer;
 
 #ifndef MACCEL_TAKEOFF
 #    define MACCEL_TAKEOFF 2.0 // lower/higher value = curve starts more smoothly/abrubtly
@@ -96,14 +98,22 @@ void maccel_toggle_enabled(void) {
 #define _CONSTRAIN(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 #define CONSTRAIN_REPORT(val) (mouse_xy_report_t) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
+static inline float timer_readf(void) {
+    chSysLock();
+    const float ticks = (((chVTGetSystemTimeX()) * 1000.0f + (float)CH_CFG_ST_FREQUENCY - 1.0f) / (float)CH_CFG_ST_FREQUENCY);
+    chSysUnlock();
+    return ticks;
+}
+
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     if ((mouse_report.x == 0 && mouse_report.y == 0) || !g_maccel_config.enabled) {
         return mouse_report;
     }
 
     // time since last mouse report:
-    const uint16_t delta_time = timer_elapsed32(maccel_timer);
-    maccel_timer              = timer_read32();
+    const float newtimer = timer_readf();
+    const float delta_time = newtimer-maccel_timer;
+    maccel_timer               = newtimer;
     // get device cpi setting, only call when mouse hasn't moved since more than 200ms
     static uint16_t device_cpi = 300;
     if (delta_time > MACCEL_CPI_THROTTLE_MS) {
@@ -127,7 +137,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
 #ifdef MACCEL_DEBUG
     const float distance_out = sqrtf(x * x + y * y);
     const float velocity_out = velocity * maccel_factor;
-    printf("MACCEL: DPI:%4i Tko: %.3f Grw: %.3f Ofs: %.3f Lmt: %.3f | Fct: %.3f v.in: %.3f v.out: %.3f d.in: %3i d.out: %3i\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, velocity_out, CONSTRAIN_REPORT(distance), CONSTRAIN_REPORT(distance_out));
+    printf("MACCEL: DPI:%4i Tko: %.3f Grw: %.3f Ofs: %.3f Lmt: %.3f | Fct: %.3f v.in: %.3f v.out: %.3f d.in: %3i d.out: %3i t: %f\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, velocity_out, CONSTRAIN_REPORT(distance), CONSTRAIN_REPORT(distance_out), delta_time);
 #endif // MACCEL_DEBUG
 
     // report back accelerated values
