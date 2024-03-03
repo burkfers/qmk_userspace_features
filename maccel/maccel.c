@@ -56,7 +56,7 @@ float maccel_get_growth_rate(void) {
     return g_maccel_config.growth_rate;
 }
 float maccel_get_offset(void) {
-    return g_maccel_config.limit;
+    return g_maccel_config.offset;
 }
 float maccel_get_limit(void) {
     return g_maccel_config.limit;
@@ -72,7 +72,7 @@ void maccel_set_growth_rate(float val) {
     }
 }
 void maccel_set_offset(float val) {
-    g_maccel_config.limit = val;
+    g_maccel_config.offset = val;
 }
 void maccel_set_limit(float val) {
     if (val >= 1) { // limit less than 1 leads to nonsensical results
@@ -153,22 +153,22 @@ bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t takeo
     if (record->event.pressed) {
         if (keycode == takeoff) {
             maccel_set_takeoff(maccel_get_takeoff() + get_mod_step(MACCEL_TAKEOFF_STEP));
-            printf("MACCEL:keycode: TKO: %.3f gro: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
+            printf("MACCEL:keycode: TKO: %.3f gro: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
             return false;
         }
         if (keycode == growth_rate) {
             maccel_set_growth_rate(maccel_get_growth_rate() + get_mod_step(MACCEL_GROWTH_RATE_STEP));
-            printf("MACCEL:keycode: tko: %.3f GRO: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
+            printf("MACCEL:keycode: tko: %.3f GRO: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
             return false;
         }
         if (keycode == offset) {
             maccel_set_offset(maccel_get_offset() + get_mod_step(MACCEL_OFFSET_STEP));
-            printf("MACCEL:keycode: tko: %.3f gro: %.3f OFS: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
+            printf("MACCEL:keycode: tko: %.3f gro: %.3f OFS: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
             return false;
         }
         if (keycode == limit) {
             maccel_set_limit(maccel_get_limit() + get_mod_step(MACCEL_LIMIT_STEP));
-            printf("MACCEL:keycode: tko: %.3f gro: %.3f ofs: %.3f LMT: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.limit, g_maccel_config.limit);
+            printf("MACCEL:keycode: tko: %.3f gro: %.3f ofs: %.3f LMT: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
             return false;
         }
     }
