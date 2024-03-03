@@ -27,7 +27,7 @@ static uint32_t maccel_timer;
 #    define MACCEL_LIMIT_UPPER 1 // upper limit of accel curve, recommended to leave at 1; adjust DPI setting instead.
 #endif
 #ifndef MACCEL_ROUNDING_CARRY_TIMEOUT_MS
-#    define MACCEL_ROUNDING_CARRY_TIMEOUT_MS 200 // milliseconds after which to reset quantization error correction (forget rounding remainder)
+#    define MACCEL_ROUNDING_CARRY_TIMEOUT_MS 300 // Elapsed time after which quantization error gets reset.
 #endif
 
 maccel_config_t g_maccel_config = {
@@ -110,15 +110,13 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     const uint16_t delta_time = timer_elapsed32(maccel_timer);
     // skip maccel maths if report = 0, or if maccel not enabled.
     if ((mouse_report.x == 0 && mouse_report.y == 0) || !g_maccel_config.enabled) {
+        if (delta_time > MACCEL_ROUNDING_CARRY_TIMEOUT_MS) {
+            rounding_carry_x = rounding_carry_y = 0;
+        }
         return mouse_report;
     }
     // reset timer:
     maccel_timer = timer_read32();
-    // Reset carry if too much time passed
-    if (delta_time > MACCEL_ROUNDING_CARRY_TIMEOUT_MS) {
-        rounding_carry_x = 0;
-        rounding_carry_y = 0;
-    }
     // Reset carry when pointer swaps direction, to follow user's hand.
     if (mouse_report.x * rounding_carry_x < 0) rounding_carry_x = 0;
     if (mouse_report.y * rounding_carry_y < 0) rounding_carry_y = 0;
