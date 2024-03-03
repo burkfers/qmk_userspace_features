@@ -34,25 +34,6 @@ maccel_config_t g_maccel_config = {
     // clang-format on
 };
 
-/* DEVICE_CPI_PARAM
-A device specific parameter required to ensure consistent acceleration behaviour across different devices and user dpi settings.
- * PMW3360: 0.087
- * PMW3389: tbd
- * Cirque: 0.087
- * Azoteq: tbd
-*///disclaimer: values guesstimated by scientifically questionable emperical testing
-// Slightly hacky method of detecting which driver is loaded
-#if !defined(DEVICE_CPI_PARAM)
-#    if defined(POINTING_DEVICE_DRIVER_pmw3360)
-#        define DEVICE_CPI_PARAM 0.087
-#    elif defined(POINTING_DEVICE_DRIVER_cirque_pinnacle_spi)
-#        define DEVICE_CPI_PARAM 0.087
-#    else
-#        warning "Unsupported pointing device driver! Please manually set the scaling parameter DEVICE_CPI_PARAM to achieve a consistent acceleration curve!"
-#        define DEVICE_CPI_PARAM 0.087
-#    endif
-#endif
-
 #ifdef MACCEL_USE_KEYCODES
 #    ifndef MACCEL_TAKEOFF_STEP
 #        define MACCEL_TAKEOFF_STEP 0.01f
@@ -129,7 +110,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
             device_cpi = pointing_device_get_cpi();
         }
         // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
-        const float dpi_correction = (float)100.0f / (DEVICE_CPI_PARAM * device_cpi);
+        const float dpi_correction = (float)1000.0f / device_cpi;
         // calculate euclidean distance moved (sqrt(x^2 + y^2))
         const float distance = sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y);
         // calculate delta velocity: dv = distance/dt
