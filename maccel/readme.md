@@ -58,7 +58,7 @@ Continue with "Installation (common)", below.
 
 ### Installation (common)
 
-Add to `pointing_device_task_user` in `keymap.c` or your userspace source file (paste the whole function if it did not exist):
+Make sure the `pointing_device_task_user()` function in your `keymap.c` or userspace-sources exists, and contains the following code:
 ```c
 report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
     // ...
@@ -72,7 +72,7 @@ See the section on runtime adjusting by keycodes and on via support for installa
 
 ## Configuration
 
-This accel curve works in opposite direction from what you may be used to from other acceleration tools, due to technical limitations in QMK. It scales pointer sensitivity upwards rather than downwards, which means you will have to lower your device DPI setting from what you'd normally do.
+This accel curve works in opposite direction from what you may be used to from other acceleration tools, due to technical limitations in QMK. It scales pointer sensitivity upwards rather than downwards, which means you will either have to lower your device DPI setting from what you'd normally do, or lower your mouse speed in your operating system's settings, or both.
 
 Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
 ```c
@@ -108,6 +108,15 @@ To aid in dialing in your settings just right, a debug mode exists to print math
 ```
 
 The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance.
+
+Finally, linearity across diferrent user-CPI settings works better when pointer task throttling
+is enforced, ie. add something like this in your `config.h`:
+
+```c
+// Fixed pointer-task frequency needed for consistent acceleration across different user CPIs.
+#undef  POINTING_DEVICE_TASK_THROTTLE_MS
+#define POINTING_DEVICE_TASK_THROTTLE_MS 5
+``` 
 
 ## Runtime adjusting of curve parameters by keycodes (optional)
 
@@ -207,7 +216,7 @@ Extend its `menus` configuration by placing the [menu definition](assets/via.jso
 - [Dilemma v2](assets/dilemma_v2.json)
 - [Dilemma Max](assets/dilemma_max.json)
 
-Finally, after flashing the firmware to your board, load the custom via definition in the design tab in [via](https://usevia.app)
+Finally, after flashing the firmware to your board, load the custom via definition in the design tab in [via](https://usevia.app) (you may have to enable the "Show Design Tab" option in the settings).
 
 # Setup checklist
 
