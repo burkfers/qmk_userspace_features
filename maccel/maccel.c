@@ -97,8 +97,8 @@ void maccel_toggle_enabled(void) {
 #define CONSTRAIN_REPORT(val) (mouse_xy_report_t) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
-    static float rounding_curry_x = 0;
-    static float rounding_curry_y = 0;
+    static float rounding_carry_x = 0;
+    static float rounding_carry_y = 0;
     // time since last mouse report:
     const uint16_t delta_time = timer_elapsed32(maccel_timer);
     // skip maccel maths if report = 0, or if maccel not enabled.
@@ -108,8 +108,8 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     // reset timer:
     maccel_timer = timer_read32();
     // Reset carry when pointer swaps direction, to follow user's hand.
-    if (mouse_report.x * rounding_curry_x < 0) rounding_curry_x = 0;
-    if (mouse_report.y * rounding_curry_y < 0) rounding_curry_y = 0;
+    if (mouse_report.x * rounding_carry_x < 0) rounding_carry_x = 0;
+    if (mouse_report.y * rounding_carry_y < 0) rounding_carry_y = 0;
     // Limit expensive calls to get device cpi settings only when mouse stationay for > 200ms.
     static uint16_t device_cpi = 300;
     if (delta_time > MACCEL_CPI_THROTTLE_MS) {
@@ -126,11 +126,11 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     // calculate mouse acceleration factor: f(dv) = c - ((c-1) / ((1 + e^(x(x - b)) * a/z)))
     const float maccel_factor = 1.1 - (1.1 - g_maccel_config.limit) / powf(1 + expf(g_maccel_config.takeoff * (velocity - g_maccel_config.limit)), g_maccel_config.growth_rate / g_maccel_config.takeoff);
     // DPI-scale also mouse-report x, y and account old quantization errors.
-    const float new_x = rounding_curry_x + maccel_factor * mouse_report.x;
-    const float new_y = rounding_curry_y + maccel_factor * mouse_report.y;
+    const float new_x = rounding_carry_x + maccel_factor * mouse_report.x;
+    const float new_y = rounding_carry_y + maccel_factor * mouse_report.y;
     // Accumulate any difference from next integer (quantization).
-    rounding_curry_x = new_x - (int)new_x;
-    rounding_curry_y = new_y - (int)new_y;
+    rounding_carry_x = new_x - (int)new_x;
+    rounding_carry_y = new_y - (int)new_y;
     // clamp values
     const mouse_xy_report_t x = CONSTRAIN_REPORT(new_x);
     const mouse_xy_report_t y = CONSTRAIN_REPORT(new_y);
