@@ -124,15 +124,15 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     const float velocity_raw = distance / delta_time;
     // correct raw velocity for dpi
     const float velocity = dpi_correction * velocity_raw;
-    // calculate mouse acceleration factor: f(dv) = c - ((c-1) / ((1 + e^(x(x - b)) * a/z)))
+    // letter variables for readability of maths:
     const float k = g_maccel_config.takeoff;
     const float g = g_maccel_config.growth_rate;
     const float s = g_maccel_config.offset;
     const float m = g_maccel_config.limit;
-    // acceleration factor: y(x) = M - (M - 1) / {1 + e^[K(x - S)]}^(G/K)
+    // acceleration factor: f(v) = 1.1 - (1.1 - M) / {1 + e^[K(v - S)]}^(G/K):
     // Generalised Sigmoid Function, see https://www.desmos.com/calculator/xkhejelty8
     const float maccel_factor = 1.1 - (1.1 - m) / powf(1 + expf(k * (velocity - s)), g / k);
-    // DPI-scale also mouse-report x, y and account old quantization errors.
+    // multiply mouse-reports by acceleration factor, and account old quantization errors:
     const float new_x = rounding_carry_x + maccel_factor * mouse_report.x;
     const float new_y = rounding_carry_y + maccel_factor * mouse_report.y;
     // Accumulate any difference from next integer (quantization).
