@@ -118,7 +118,13 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     // correct raw velocity for dpi
     const float velocity = dpi_correction * velocity_raw;
     // calculate mouse acceleration factor: f(dv) = c - ((c-1) / ((1 + e^(x(x - b)) * a/z)))
-    const float maccel_factor = g_maccel_config.limit - (g_maccel_config.limit - 1) / powf(1 + expf(g_maccel_config.takeoff * (velocity - g_maccel_config.offset)), g_maccel_config.growth_rate / g_maccel_config.takeoff);
+    const float k = g_maccel_config.takeoff;
+    const float g = g_maccel_config.growth_rate;
+    const float s = g_maccel_config.offset;
+    const float m = g_maccel_config.limit;
+    // acceleration factor: y(x) = M - (M - 1) / {1 + e^[K(x - S)]}^(G/K)
+    // Generalised Sigmoid Function, see https://www.desmos.com/calculator/xkhejelty8
+    const float maccel_factor = m - (m - 1) / powf(1 + expf(k * (velocity - s)), g / k);
     // calculate accelerated delta X and Y values and clamp:
     const mouse_xy_report_t x = CONSTRAIN_REPORT(mouse_report.x * maccel_factor);
     const mouse_xy_report_t y = CONSTRAIN_REPORT(mouse_report.y * maccel_factor);
