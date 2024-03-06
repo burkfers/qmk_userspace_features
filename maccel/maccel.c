@@ -9,7 +9,7 @@
 static uint32_t maccel_timer;
 
 #ifndef MACCEL_TAKEOFF
-#    define MACCEL_TAKEOFF 2.0 // lower/higher value = curve starts more smoothly/abrubtly
+#    define MACCEL_TAKEOFF 2.0 // lower/higher value = curve starts more smoothly/abruptly
 #endif
 #ifndef MACCEL_GROWTH_RATE
 #    define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster
@@ -124,7 +124,13 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     // correct raw velocity for dpi
     const float velocity = dpi_correction * velocity_raw;
     // calculate mouse acceleration factor: f(dv) = c - ((c-1) / ((1 + e^(x(x - b)) * a/z)))
-    const float maccel_factor = 1.1 - (1.1 - g_maccel_config.limit) / powf(1 + expf(g_maccel_config.takeoff * (velocity - g_maccel_config.limit)), g_maccel_config.growth_rate / g_maccel_config.takeoff);
+    const float k = g_maccel_config.takeoff;
+    const float g = g_maccel_config.growth_rate;
+    const float s = g_maccel_config.offset;
+    const float m = g_maccel_config.limit;
+    // acceleration factor: y(x) = M - (M - 1) / {1 + e^[K(x - S)]}^(G/K)
+    // Generalised Sigmoid Function, see https://www.desmos.com/calculator/xkhejelty8
+    const float maccel_factor = 1.1 - (1.1 - m) / powf(1 + expf(k * (velocity - s)), g / k);
     // DPI-scale also mouse-report x, y and account old quantization errors.
     const float new_x = rounding_carry_x + maccel_factor * mouse_report.x;
     const float new_y = rounding_carry_y + maccel_factor * mouse_report.y;
@@ -188,12 +194,12 @@ bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t takeo
 }
 #else
 bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t takeoff, uint16_t growth_rate, uint16_t offset, uint16_t limit) {
-    // provide a do-nothing keyrecord function so a user doesn't need to unshim when disabling the keycodes
+    // provide a do-nothing keyrecord function so a user doesn't need to un-shim when disabling the keycodes
     return true;
 }
 #endif
 
-// provide weak do-nothing shims so users do not need to unshim when diabling via
+// provide weak do-nothing shims so users do not need to un-shim when disabling via
 __attribute__((weak)) void keyboard_post_init_maccel(void) {
     return;
 }
