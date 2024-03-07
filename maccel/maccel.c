@@ -133,7 +133,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     const float s = g_maccel_config.offset;
     const float m = g_maccel_config.limit;
     // acceleration factor: f(v) = 1 - (1 - M) / {1 + e^[K(v - S)]}^(G/K):
-    // Generalised Sigmoid Function, see https://www.desmos.com/calculator/xkhejelty8
+    // Generalised Sigmoid Function, see https://www.desmos.com/calculator/k9vr0y2gev
     const float maccel_factor = MACCEL_LIMIT_UPPER - (MACCEL_LIMIT_UPPER - m) / powf(1 + expf(k * (velocity - s)), g / k);
     // multiply mouse reports by acceleration factor, and account for previous quantization errors:
     const float new_x = rounding_carry_x + maccel_factor * mouse_report.x;
