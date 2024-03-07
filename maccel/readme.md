@@ -77,11 +77,13 @@ Several characteristics of the acceleration curve can be tweaked by adding relev
 #define MACCEL_TAKEOFF 2.0      // lower/higher value = curve takes off more smoothly/abruptly
 #define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster 
 #define MACCEL_OFFSET 2.2       // lower/higher value = acceleration kicks in earlier/later
-#define MACCEL_LIMIT 0.2        // lower limit of accel curve (multiplication factor effective at lowest speeds)
+#define MACCEL_LIMIT 0.2        // lower limit of accel curve (ninimum acceleration factor)
 ```
 [![](assets/accel_curve.png)](https://www.desmos.com/calculator/g6zxh5rt44)
 
-The graph above shows the acceleration curve. You can interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: at the start of the curve the factor is 1, and your mouse sensitivity will be equal to your default DPI setting. At the end of the curve, the factor approaches a limit which can be set by the LIMIT variable. The limit is 6 in this example and will result in a maximum mouse sensitivity of 6 times your default DPI.
+////!!new image and actualized desmos tool to be added
+
+The graph above shows the acceleration curve. You can interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: the curve maxes out at 1, meaning your mouse sensitivity will never go higher than your default DPI setting; at the start of the curve your sensitivity is scaled down to a minimum that can be set by the LIMIT variable. The limit in this example is 0.2, which means at the lowest speeds your mouse sensitivity is scaled down to an equivalent of 0.2 times your default DPI.
 
 If you click on the image of the curve, you will be linked to Desmos, where you can play around with the variables to understand how each of them affect the shape of the curve. But in short:
 
@@ -89,13 +91,13 @@ The TAKEOFF variable controls how smoothly or abruptly the acceleration curve ta
 
 The GROWTH_RATE variable sets the growth rate of the acceleration curve. A lower value will result in a flatter curve which takes longer to reach its LIMIT. A higher value will result in a steeper curve, which will reach its LIMIT faster.
 
-The OFFSET variable moves the entire curve towards left/right. Offsetting the curve to the right means acceleration will kick in later, which is useful for low speed precision - in effect what you would otherwise have used SNIPING mode for. The maccel feature basically eliminates the need for a sniping mode.
+The OFFSET variable moves the entire curve towards the right. Offsetting the curve to the right means acceleration will kick in later, which is useful for low speed precision - in effect what you would otherwise have used SNIPING mode for. The maccel feature basically eliminates the need for a sniping mode.
 
-The LIMIT variable sets the lower limit for the acceleration curve. This is the acceleration factor at which the curve will start.
+The LIMIT variable sets the lower limit for the acceleration curve. This is the minimum acceleration factor at which the curve will start.
 
-A good starting point for tweaking your settings, is to set your default DPI to a value that is snappy and makes it easy to cross your screen. Then set the LIMIT variable to a factor that when multiplied with your DPI speed results in a slow and precise movement. For example, if my usual settings are a default DPI of 1000 and a sniping DPI of 200, I would now set my default DPI to 1000, and set my LIMIT variable to 0.2, which will result in an equivalent DPI scaling of 1000*0.2=200 at the lower limit of the acceleration curve. From there you can start playing around with the variables until you arrive at something to your liking.
+A good starting point for tweaking your settings, is to set your default DPI slightly higher than what you'd use without acceleration. Then set your LIMIT variable to a factor that would scale down to what you normally might have set your sniping DPI. For example, if your usual default DPI is 900, you might set it now to 1000. And if your usual sniping DPI is 200, you might set your LIMIT to 0.2 (0.2*1000=200). From there you can start playing around with the variables until you arrive at something to your liking.
 
-To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. Refer to the QMK documentation on how to *enable the console and debugging*, then enable mouse acceleration debugging in `config.h`:
+To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance. Refer to the QMK documentation on how to *enable the console and debugging*, then enable mouse acceleration debugging in `config.h`:
 ```c
 #define MACCEL_DEBUG
 /*
@@ -103,17 +105,6 @@ To aid in dialing in your settings just right, a debug mode exists to print math
  */
 #undef PRINTF_SUPPORT_DECIMAL_SPECIFIERS
 #define PRINTF_SUPPORT_DECIMAL_SPECIFIERS 1
-```
-
-The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance.
-
-Finally, linearity across different user-CPI settings works better when pointer task throttling
-is enforced, ie. add something like this in your `config.h`:
-
-```c
-// Fixed pointer-task frequency needed for consistent acceleration across different user CPIs.
-#undef  POINTING_DEVICE_TASK_THROTTLE_MS
-#define POINTING_DEVICE_TASK_THROTTLE_MS 5
 ```
 
 ## Runtime adjusting of curve parameters by keycodes (optional)
@@ -239,21 +230,33 @@ With an unfavorable combination of `POINTING_DEVICE_THROTTLE_MS` and higher DPI,
 #define MOUSE_EXTENDED_REPORT
 ```
 
-The maccel feature has so far only been properly tested with PMW3360 sensor. However, it should work fine with all other QMK compatible sensors and devices as well, but the behavior may not be 100% consistent across different DPI settings. Hence it might be a bit harder to dial in your variable preferences for those devices. This is due to a device-specific parameter in the calculations, that hasn't yet been determined for other devices than the PMW3360 sensor.
+Sensor compatibility:
+* PMW3360: fully compatible, elaborately tested
+* Other PMW33xx sensors will very likely perform equally well (but not tested so far)
+* Cirque trackpad: compatible, limited testing
+* Azoteq: still some issues to be resolved, not yet compatible
+* No other QMK compatible sensors have been tested so far. We expect most sensors to work fine with maccel, but there could always be unexpected driver/firmware related conflicts we are not aware of.
+* If you are using maccel succesfully (or unsucessfully) with a sensor that isn't listed here, we'd love to hear!
 
-This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. Tested only on RP2040!
+MCU compatibility:
+* This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. So far tested only on RP2040!
+
 
 It is currently unknown how the unthrottled polling when used with `POINTING_DEVICE_MOTION_PIN` would interact with the expensive calculations.
 
 ## Breaking changes
 
-### 2024 March 7
+### //2024 ?? WIP
 
-If you're updating from a previous version, this version will require adjusting your DPI and parameters:
-- The DPI you set are now the maximum pointer speed, and `LIMIT` is now the lower limit of your curve.
-- Set your DPI to your previous DPI value multiplied by your previous `LIMIT`
-- Set LIMIT to your new DPI divided by your previous DPI
-  - For example, with a previous DPI of 200 and a `LIMIT` of 5, you would set your DPI to 1000 and your `LIMIT` to 0.2.
+This new release changes the acceleration curve from a up-scaling curve to a down-scaling curve, to match how other acceleration tools work, and to avoid forcing users to set a very low DPI setting - this had been the goal from the start, but it took until now to overcome the technical challenges to make this work smoothly.
+
+See the configuration bit of this readme for an explanation of how the new curve works. This change means that you will have to readjust your variables; but do not worry, it is fairly easy to get this dialed in to *exactly* to how you had it set before:
+* First, change your default DPI: NEW-DPI = old-dpi * old-limit
+* Second, change your LIMIT variable (which is now lower instead of upper limit): NEW LIMIT = old-dpi / NEW-DPI
+* Your other variables can remain the same.
+* If using via, make sure to clear EEPROM for the new settings to take effect.
+* //additional instructions by @burkfers in case there is more technical things that need changing.
+
 
 ### 2024 March 1
 
@@ -267,7 +270,7 @@ If you're updating from a previous version, you will have to make manual adjustm
 If you set GROWTH_RATE to your previous value of `STEEPNESS` and keep `TAKEOFF` at a high value (eg. `10`), the behavior will be similar to previous versions.
 
 ## Release history
-- 2024 March 7 - Release of new scaling-down acceleration curve
+- //2024 ?? WIP - Release of improved down scaling accel curve
 - 2024 March 1 - Release of new four-parameter acceleration curve
 - 2024 February 23 - New four-parameter acceleration curve and improved documentation
 - 2024 February 07 - Experimental new DPI correction to achieve consistent acceleration behavior across different user DPI settings.
