@@ -72,14 +72,12 @@ See the section on runtime adjusting by keycodes and on via support for installa
 
 ## Configuration
 
-This accel curve works in opposite direction from what you may be used to from other acceleration tools, due to technical limitations in QMK. It scales pointer sensitivity upwards rather than downwards, which means you will either have to lower your device DPI setting from what you'd normally do, or lower your mouse speed in your operating system's settings, or both.
-
 Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
 ```c
 #define MACCEL_TAKEOFF 2.0      // lower/higher value = curve takes off more smoothly/abruptly
 #define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster 
 #define MACCEL_OFFSET 2.2       // lower/higher value = acceleration kicks in earlier/later
-#define MACCEL_LIMIT 6.0        // upper limit of accel curve (maximum acceleration factor)
+#define MACCEL_LIMIT 0.2        // lower limit of accel curve (multiplication factor effective at lowest speeds)
 ```
 [![](assets/accel_curve.png)](https://www.desmos.com/calculator/g6zxh5rt44)
 
@@ -93,9 +91,9 @@ The GROWTH_RATE variable sets the growth rate of the acceleration curve. A lower
 
 The OFFSET variable moves the entire curve towards left/right. Offsetting the curve to the right means acceleration will kick in later, which is useful for low speed precision - in effect what you would otherwise have used SNIPING mode for. The maccel feature basically eliminates the need for a sniping mode.
 
-The LIMIT variable sets the upper limit for the acceleration curve. This is the maximum acceleration factor the curve will reach.
+The LIMIT variable sets the lower limit for the acceleration curve. This is the acceleration factor at which the curve will start.
 
-A good starting point for tweaking your settings, is to set your default DPI to what you'd normally have set your sniping DPI. Then set the LIMIT variable to a factor that results in a bit higher than your usual default DPI. For example, if my usual settings are a default DPI of 1000 and a sniping DPI of 200, I would now set my default DPI to 200, and set my LIMIT variable to 6, which will result in an equivalent DPI scaling of 200*6=1200 at the upper limit of the acceleration curve. From there you can start playing around with the variables until you arrive at something to your liking.
+A good starting point for tweaking your settings, is to set your default DPI to a value that is snappy and makes it easy to cross your screen. Then set the LIMIT variable to a factor that when multiplied with your DPI speed results in a slow and precise movement. For example, if my usual settings are a default DPI of 1000 and a sniping DPI of 200, I would now set my default DPI to 1000, and set my LIMIT variable to 0.2, which will result in an equivalent DPI scaling of 1000*0.2=200 at the lower limit of the acceleration curve. From there you can start playing around with the variables until you arrive at something to your liking.
 
 To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. Refer to the QMK documentation on how to *enable the console and debugging*, then enable mouse acceleration debugging in `config.h`:
 ```c
@@ -115,7 +113,7 @@ Finally, linearity across different user-CPI settings works better when pointer 
 // Fixed pointer-task frequency needed for consistent acceleration across different user CPIs.
 #undef  POINTING_DEVICE_TASK_THROTTLE_MS
 #define POINTING_DEVICE_TASK_THROTTLE_MS 5
-``` 
+```
 
 ## Runtime adjusting of curve parameters by keycodes (optional)
 
@@ -245,12 +243,22 @@ The maccel feature has so far only been properly tested with PMW3360 sensor. How
 
 This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. Tested only on RP2040!
 
+It is currently unknown how the unthrottled polling when used with `POINTING_DEVICE_MOTION_PIN` would interact with the expensive calculations.
+
 ## Breaking changes
 
 ### 2024 March 10
 
 A keycode for toggling mouse acceleration was added: If you enabled maccel keycodes, you must add a fifth keycode to your enum and add it to the shim between the record and takeoff arguments. Don't forget to place it on your keymap!
  
+### 2024 March 7
+
+If you're updating from a previous version, this version will require adjusting your DPI and parameters:
+- The DPI you set are now the maximum pointer speed, and `LIMIT` is now the lower limit of your curve.
+- Set your DPI to your previous DPI value multiplied by your previous `LIMIT`
+- Set LIMIT to your new DPI divided by your previous DPI
+  - For example, with a previous DPI of 200 and a `LIMIT` of 5, you would set your DPI to 1000 and your `LIMIT` to 0.2.
+
 ### 2024 March 1
 
 If you're updating from a previous version, you will have to make manual adjustments to your integration. Refer to the instructions for details on what the current version expects:
@@ -263,6 +271,7 @@ If you're updating from a previous version, you will have to make manual adjustm
 If you set GROWTH_RATE to your previous value of `STEEPNESS` and keep `TAKEOFF` at a high value (eg. `10`), the behavior will be similar to previous versions.
 
 ## Release history
+- 2024 March 7 - Release of new scaling-down acceleration curve
 - 2024 March 1 - Release of new four-parameter acceleration curve
 - 2024 February 23 - New four-parameter acceleration curve and improved documentation
 - 2024 February 07 - Experimental new DPI correction to achieve consistent acceleration behavior across different user DPI settings.
@@ -272,7 +281,7 @@ If you set GROWTH_RATE to your previous value of `STEEPNESS` and keep `TAKEOFF` 
 Thanks to everyone who helped!
 Including, but not limited to:
 - Wimads (@wimads) and burkfers (@burkfers) wrote most of the code
+- ankostis (@ankostis) for catalysing discussion about improving the acceleration curve and providing several enhancements
 - Quentin (@balanstik) for insightful commentary on the math, and testing
 - ouglop (@ouglop) for insightful commentary on the math
 - Drashna Jael're (@drashna) for coding tips and their invaluable bag of magic C tricks
-- ankostis (@ankostis) for catalyzing discussion about improving the acceleration curve
