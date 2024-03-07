@@ -100,7 +100,7 @@ void maccel_toggle_enabled(void) {
 #define CONSTRAIN_REPORT(val) (mouse_xy_report_t) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
-    // rounding carry to recycling dropped floats from int mouse reports, to smoothen low speed movements (credit @ankostis)
+    // rounding carry to recycle dropped floats from int mouse reports, to smoothen low speed movements (credit @ankostis)
     static float rounding_carry_x = 0;
     static float rounding_carry_y = 0;
     // time since last mouse report:
@@ -135,7 +135,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     // acceleration factor: f(v) = 1 - (1 - M) / {1 + e^[K(v - S)]}^(G/K):
     // Generalised Sigmoid Function, see https://www.desmos.com/calculator/xkhejelty8
     const float maccel_factor = MACCEL_LIMIT_UPPER - (MACCEL_LIMIT_UPPER - m) / powf(1 + expf(k * (velocity - s)), g / k);
-    // multiply mouse-reports by acceleration factor, and account old quantization errors:
+    // multiply mouse reports by acceleration factor, and account for previous quantization errors:
     const float new_x = rounding_carry_x + maccel_factor * mouse_report.x;
     const float new_y = rounding_carry_y + maccel_factor * mouse_report.y;
     // Accumulate any difference from next integer (quantization).
