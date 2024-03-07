@@ -23,6 +23,9 @@ static uint32_t maccel_timer;
 #ifndef MACCEL_CPI_THROTTLE_MS
 #    define MACCEL_CPI_THROTTLE_MS 200 // milliseconds to wait between requesting the device's current DPI
 #endif
+#ifndef MACCEL_LIMIT_UPPER
+#    define MACCEL_LIMIT_UPPER 1
+#endif
 
 maccel_config_t g_maccel_config = {
     // clang-format off
@@ -129,9 +132,9 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     const float g = g_maccel_config.growth_rate;
     const float s = g_maccel_config.offset;
     const float m = g_maccel_config.limit;
-    // acceleration factor: f(v) = 1.1 - (1.1 - M) / {1 + e^[K(v - S)]}^(G/K):
+    // acceleration factor: f(v) = 1 - (1 - M) / {1 + e^[K(v - S)]}^(G/K):
     // Generalised Sigmoid Function, see https://www.desmos.com/calculator/xkhejelty8
-    const float maccel_factor = 1.1 - (1.1 - m) / powf(1 + expf(k * (velocity - s)), g / k);
+    const float maccel_factor = MACCEL_LIMIT_UPPER - (MACCEL_LIMIT_UPPER - m) / powf(1 + expf(k * (velocity - s)), g / k);
     // multiply mouse-reports by acceleration factor, and account old quantization errors:
     const float new_x = rounding_carry_x + maccel_factor * mouse_report.x;
     const float new_y = rounding_carry_y + maccel_factor * mouse_report.y;
