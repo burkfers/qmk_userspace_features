@@ -79,7 +79,7 @@ Several characteristics of the acceleration curve can be tweaked by adding relev
 #define MACCEL_OFFSET 2.2       // lower/higher value = acceleration kicks in earlier/later
 #define MACCEL_LIMIT 0.2        // lower limit of accel curve (ninimum acceleration factor)
 ```
-[![](assets/accel_curve.png)](https://www.desmos.com/calculator/xwicrnjihp)
+[![](assets/accel_curve.png)](https://www.desmos.com/calculator/k9vr0y2gev)
 
 The graph above shows the acceleration curve. You can interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: the curve maxes out at 1, meaning your mouse sensitivity will never go higher than your default DPI setting; at the start of the curve your sensitivity is scaled down to a minimum that can be set by the LIMIT variable. The limit in this example is 0.2, which means at the lowest speeds your mouse sensitivity is scaled down to an equivalent of 0.2 times your default DPI.
 
