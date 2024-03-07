@@ -1,6 +1,6 @@
 # Mouse acceleration
 
-This feature was born from the frustration of not having a tweakable acceleration curve that could work between OSes and hosts and be specific to one device, catalysed by multiple users expressing interest.
+This feature was born from the frustration of not having a tweakable acceleration curve that could work between OSes and hosts and be specific to one device, catalyzed by multiple users expressing interest.
 
 ## Installation
 
@@ -76,7 +76,7 @@ This accel curve works in opposite direction from what you may be used to from o
 
 Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
 ```c
-#define MACCEL_TAKEOFF 2.0      // lower/higher value = curve takes off more smoothly/abrubtly
+#define MACCEL_TAKEOFF 2.0      // lower/higher value = curve takes off more smoothly/abruptly
 #define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster 
 #define MACCEL_OFFSET 2.2       // lower/higher value = acceleration kicks in earlier/later
 #define MACCEL_LIMIT 6.0        // upper limit of accel curve (maximum acceleration factor)
@@ -85,9 +85,9 @@ Several characteristics of the acceleration curve can be tweaked by adding relev
 
 The graph above shows the acceleration curve. You can interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: at the start of the curve the factor is 1, and your mouse sensitivity will be equal to your default DPI setting. At the end of the curve, the factor approaches a limit which can be set by the LIMIT variable. The limit is 6 in this example and will result in a maximum mouse sensitivity of 6 times your default DPI.
 
-If you click on the image of the curve, you will be linked to desmos, where you can play around with the variables to understand how each of them affect the shape of the curve. But in short:
+If you click on the image of the curve, you will be linked to Desmos, where you can play around with the variables to understand how each of them affect the shape of the curve. But in short:
 
-The TAKEOFF variable controls how smoothly or abrubtly the acceleration curve takes off. A higher value will make it take off more abrubtly, a lower value smoothens out the start of the curve.
+The TAKEOFF variable controls how smoothly or abruptly the acceleration curve takes off. A higher value will make it take off more abruptly, a lower value smoothens out the start of the curve.
 
 The GROWTH_RATE variable sets the growth rate of the acceleration curve. A lower value will result in a flatter curve which takes longer to reach its LIMIT. A higher value will result in a steeper curve, which will reach its LIMIT faster.
 
@@ -232,7 +232,7 @@ Finally, after flashing the firmware to your board, load the custom via definiti
   - Enable in `rules.mk`
   - Shim `keyboard_post_init_user`
   - Set user eeprom data block size
-  - Create custom via json and sideload it in the web app
+  - Create custom via json and side-load it in the web app
 
 ## Limitations
 
@@ -241,7 +241,7 @@ With an unfavorable combination of `POINTING_DEVICE_THROTTLE_MS` and higher DPI,
 #define MOUSE_EXTENDED_REPORT
 ```
 
-The maccel feature has so far only been properly tested with PMW3360 sensor. However, it should work fine with all other QMK compatible sensors and devices as well, but the behaviour may not be 100% consistent across different DPI settings. Hence it might be a bit harder to dial in your variable preferences for those devices. This is due to a device-specific parameter in the calculations, that hasn't yet been determined for other devices than the PMW3360 sensor.
+The maccel feature has so far only been properly tested with PMW3360 sensor. However, it should work fine with all other QMK compatible sensors and devices as well, but the behavior may not be 100% consistent across different DPI settings. Hence it might be a bit harder to dial in your variable preferences for those devices. This is due to a device-specific parameter in the calculations, that hasn't yet been determined for other devices than the PMW3360 sensor.
 
 This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. Tested only on RP2040!
 
@@ -271,4 +271,4 @@ Including, but not limited to:
 - Quentin (@balanstik) for insightful commentary on the math, and testing
 - ouglop (@ouglop) for insightful commentary on the math
 - Drashna Jael're (@drashna) for coding tips and their invaluable bag of magic C tricks
-- ankostis (@ankostis) for catalysing discussion about improving the acceleration curve
+- ankostis (@ankostis) for catalyzing discussion about improving the acceleration curve

@@ -9,7 +9,7 @@
 static uint32_t maccel_timer;
 
 #ifndef MACCEL_TAKEOFF
-#    define MACCEL_TAKEOFF 2.0 // lower/higher value = curve starts more smoothly/abrubtly
+#    define MACCEL_TAKEOFF 2.0 // lower/higher value = curve starts more smoothly/abruptly
 #endif
 #ifndef MACCEL_GROWTH_RATE
 #    define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster
@@ -182,12 +182,12 @@ bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t takeo
 }
 #else
 bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t takeoff, uint16_t growth_rate, uint16_t offset, uint16_t limit) {
-    // provide a do-nothing keyrecord function so a user doesn't need to unshim when disabling the keycodes
+    // provide a do-nothing keyrecord function so a user doesn't need to un-shim when disabling the keycodes
     return true;
 }
 #endif
 
-// provide weak do-nothing shims so users do not need to unshim when diabling via
+// provide weak do-nothing shims so users do not need to un-shim when disabling via
 __attribute__((weak)) void keyboard_post_init_maccel(void) {
     return;
 }
