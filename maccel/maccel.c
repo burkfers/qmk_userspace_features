@@ -114,7 +114,7 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     // Reset carry when pointer swaps direction, to follow user's hand.
     if (mouse_report.x * rounding_carry_x < 0) rounding_carry_x = 0;
     if (mouse_report.y * rounding_carry_y < 0) rounding_carry_y = 0;
-    // Limit expensive calls to get device cpi settings only when mouse stationay for > 200ms.
+    // Limit expensive calls to get device cpi settings only when mouse stationary for > 200ms.
     static uint16_t device_cpi = 300;
     if (delta_time > MACCEL_CPI_THROTTLE_MS) {
         device_cpi = pointing_device_get_cpi();
