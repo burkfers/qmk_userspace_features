@@ -77,7 +77,7 @@ Several characteristics of the acceleration curve can be tweaked by adding relev
 #define MACCEL_TAKEOFF 2.0      // lower/higher value = curve takes off more smoothly/abruptly
 #define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster 
 #define MACCEL_OFFSET 2.2       // lower/higher value = acceleration kicks in earlier/later
-#define MACCEL_LIMIT 0.2        // lower limit of accel curve (ninimum acceleration factor)
+#define MACCEL_LIMIT 0.2        // lower limit of accel curve (minimum acceleration factor)
 ```
 [![](assets/accel_curve.png)](https://www.desmos.com/calculator/k9vr0y2gev)
 
@@ -234,12 +234,12 @@ Sensor compatibility:
 * Cirque trackpad: compatible, limited testing
 * Azoteq: still some issues to be resolved, not yet compatible
 * No other QMK compatible sensors have been tested so far. We expect most sensors to work fine with maccel, but there could always be unexpected driver/firmware related conflicts we are not aware of.
-* If you are using maccel succesfully (or unsucessfully) with a sensor that isn't listed here, we'd love to hear!
+* If you are using maccel successfully (or unsuccessfully) with a sensor that isn't listed here, we'd love to hear!
 
 MCU compatibility:
 * This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. So far tested only on RP2040!
 
-It is currently unknown how the unthrottled polling when used with `POINTING_DEVICE_MOTION_PIN` would interact with the expensive calculations.
+It is currently unknown how the un-throttled polling when used with `POINTING_DEVICE_MOTION_PIN` would interact with the expensive calculations.
 
 ## Breaking changes
 
@@ -276,7 +276,7 @@ If you set GROWTH_RATE to your previous value of `STEEPNESS` and keep `TAKEOFF` 
 Thanks to everyone who helped!
 Including, but not limited to:
 - Wimads (@wimads) and burkfers (@burkfers) wrote most of the code
-- ankostis (@ankostis) for catalysing discussion about improving the acceleration curve and providing several enhancements
+- ankostis (@ankostis) for catalyzing discussion about improving the acceleration curve and providing several enhancements
 - Quentin (@balanstik) for insightful commentary on the math, and testing
 - ouglop (@ouglop) for insightful commentary on the math
 - Drashna Jael're (@drashna) for coding tips and their invaluable bag of magic C tricks
