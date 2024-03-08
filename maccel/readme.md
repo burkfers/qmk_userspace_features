@@ -240,7 +240,6 @@ Sensor compatibility:
 MCU compatibility:
 * This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. So far tested only on RP2040!
 
-
 It is currently unknown how the unthrottled polling when used with `POINTING_DEVICE_MOTION_PIN` would interact with the expensive calculations.
 
 ## Breaking changes
@@ -254,11 +253,11 @@ A keycode for toggling mouse acceleration was added: If you enabled maccel keyco
 This new release changes the acceleration curve from a up-scaling curve to a down-scaling curve, to match how other acceleration tools work, and to avoid forcing users to set a very low DPI setting - this had been the goal from the start, but it took until now to overcome the technical challenges to make this work smoothly.
 
 See the configuration bit of this readme for an explanation of how the new curve works. This change means that you will have to readjust your variables; but do not worry, it is fairly easy to get this dialed in to *exactly* to how you had it set before:
-* First, change your default DPI: NEW-DPI = old-dpi * old-limit
-* Second, change your LIMIT variable (which is now lower instead of upper limit): NEW LIMIT = old-dpi / NEW-DPI
+
+* First, change your default DPI: $$DPI_{new} = DPI_{old} * limit_{old}$$
+* Second, change your LIMIT variable (which is now lower instead of upper limit): $$limit_{new} = DPI_{old} / DPI_{new}$$
 * Your other variables can remain the same.
 * If using via, make sure to clear EEPROM for the new settings to take effect.
-* //additional instructions by @burkfers in case there is more technical things that need changing.
 
 ### 2024 March 1
 
