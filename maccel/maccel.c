@@ -78,7 +78,7 @@ void maccel_set_offset(float val) {
     g_maccel_config.offset = val;
 }
 void maccel_set_limit(float val) {
-    if (val >= 1) { // limit less than 1 leads to nonsensical results
+    if (val >= 0) {
         g_maccel_config.limit = val;
     }
 }
