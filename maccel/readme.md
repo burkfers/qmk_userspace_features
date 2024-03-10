@@ -68,10 +68,15 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
 }
 ```
 
+To minimize the chance of maxing out the mouse reports, it is recommended to define extended mouse reports in your config.h:
+```c
+#define MOUSE_EXTENDED_REPORT
+```
+
 See the section on runtime adjusting by keycodes and on via support for installation steps for these optional features.
 
 ## Configuration
-Before configuring maccel, make sure you have turned off your OS acceleration settings: in mouse settings uncheck pointer precision (windows) or pointer acceleration (mac). And make sure there isn't any 3rd party mouse acceleration softwware running. 
+Before configuring maccel, make sure you have turned off your OS acceleration settings: in mouse settings uncheck pointer precision (windows). And make sure there isn't any 3rd party mouse acceleration softwware running. 
 
 Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
 ```c
@@ -227,12 +232,11 @@ Finally, after flashing the firmware to your board, load the custom via definiti
 
 ## Limitations
 
-With an unfavorable combination of `POINTING_DEVICE_THROTTLE_MS` and higher DPI, you may run into issues of peaking the maximum movement. Enable extended mouse reports by adding the following define in `config.h` to make this much less likely:
-```c
-#define MOUSE_EXTENDED_REPORT
-```
+**Mac OS compatibility:** 
 
-Sensor compatibility:
+Unfortunately it seems maccel does not work well together with Mac OS. We cannot say with certainty why, but it seems like Apple does some post processing to the mouse reports that distorts the maccel result, even when the OS level acceleration is disabled. But some consolation for mac users: the default mac OS acceleration implementation seems to be quite good. 
+
+**Sensor compatibility:**
 * PMW3360: fully compatible, elaborately tested
 * Other PMW33xx sensors will very likely perform equally well (but not tested so far)
 * Cirque trackpad: compatible, limited testing
@@ -240,7 +244,7 @@ Sensor compatibility:
 * No other QMK compatible sensors have been tested so far. We expect most sensors to work fine with maccel, but there could always be unexpected driver/firmware related conflicts we are not aware of.
 * If you are using maccel successfully (or unsuccessfully) with a sensor that isn't listed here, we'd love to hear!
 
-MCU compatibility:
+**MCU compatibility:**
 * This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. So far tested only on RP2040!
 
 It is currently unknown how the un-throttled polling when used with `POINTING_DEVICE_MOTION_PIN` would interact with the expensive calculations.
