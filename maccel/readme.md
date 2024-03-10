@@ -116,6 +116,14 @@ A good starting point for tweaking your settings, is to set your default DPI sli
 #define PRINTF_SUPPORT_DECIMAL_SPECIFIERS 1
 ```
 
+Finally, linearity for low CPI settings works better when pointer task throttling enforces a lower frequency from the default 1ms, to have more time to gather "dots", ie. add something like this in your `config.h`:
+
+```c
+// Reduce pointer-task frequency (1ms --> 5ms) for consistent acceleration on lower CPIs.
+#undef  POINTING_DEVICE_TASK_THROTTLE_MS
+#define POINTING_DEVICE_TASK_THROTTLE_MS 5
+``` 
+
 ## Runtime adjusting of curve parameters by keycodes (optional)
 
 ### Additional required installation steps
