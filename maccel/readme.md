@@ -122,10 +122,11 @@ Finally, linearity across different user-CPI settings works better when pointer 
 ### Additional required installation steps
 
 To use keycodes to adjust the parameters without recompiling, two more build steps are required.
-First, add four keycodes to your keycode enum. You may choose different names, as long as you use the same names in the following step. If you are not yet using custom keycodes, add the following snippet to `keymap.c`:
+First, add five keycodes to your keycode enum. You may choose different names, as long as you use the same names in the following step. If you are not yet using custom keycodes, add the following snippet to `keymap.c`:
 ```c
 enum my_keycodes {
-    MA_TAKEOFF = QK_USER,   // mouse acceleration curve takeoff (initial acceleration) step key
+    MA_TOGGLE = QK_USER,    // toggle mouse acceleration
+    MA_TAKEOFF,   // mouse acceleration curve takeoff (initial acceleration) step key
     MA_GROWTH_RATE,         // mouse acceleration curve growth rate step key
     MA_OFFSET,              // mouse acceleration curve offset step key
     MA_LIMIT,               // mouse acceleration curve limit step key
@@ -134,7 +135,7 @@ enum my_keycodes {
 Next, add another shim, this time to `process_record_user`. If you have not previously implemented this function, simply place the following snippet in your `keymap.c`:
 ```c
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    if (!process_record_maccel(keycode, record, MA_TAKEOFF, MA_GROWTH_RATE, MA_OFFSET, MA_LIMIT)) {
+    if (!process_record_maccel(keycode, record, MA_TOGGLE, MA_TAKEOFF, MA_GROWTH_RATE, MA_OFFSET, MA_LIMIT)) {
         return false;
     }
     /* insert your own macros here */
@@ -225,7 +226,7 @@ Finally, after flashing the firmware to your board, load the custom via definiti
 - Add configuration defines for parameters and optionally debugging
 - Optional: Config keycodes:
   - Enable keycode support by define
-  - Create four keycodes in the keycode enum
+  - Create five keycodes in the keycode enum
   - Shim `process_record_user`
 - Optional: VIA support:
   - Enable in `rules.mk`
@@ -246,6 +247,10 @@ This feature makes extensive use of floating point operations, and as such is no
 
 ## Breaking changes
 
+### 2024 March 10
+
+A keycode for toggling mouse acceleration was added: If you enabled maccel keycodes, you must add a fifth keycode to your enum and add it to the shim between the record and takeoff arguments. Don't forget to place it on your keymap!
+ 
 ### 2024 March 1
 
 If you're updating from a previous version, you will have to make manual adjustments to your integration. Refer to the instructions for details on what the current version expects:
