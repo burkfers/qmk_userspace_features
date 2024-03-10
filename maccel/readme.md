@@ -71,6 +71,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
 See the section on runtime adjusting by keycodes and on via support for installation steps for these optional features.
 
 ## Configuration
+Before configuring maccel, make sure you have turned off your OS acceleration settings: in mouse settings uncheck pointer precision (windows) or pointer acceleration (mac). And make sure there isn't any 3rd party mouse acceleration softwware running. 
 
 Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
 ```c
@@ -85,13 +86,13 @@ The graph above shows the acceleration curve. You can interpret this graph as fo
 
 If you click on the image of the curve, you will be linked to Desmos, where you can play around with the variables to understand how each of them affect the shape of the curve. But in short:
 
-The TAKEOFF variable controls how smoothly or abruptly the acceleration curve takes off. A higher value will make it take off more abruptly, a lower value smoothens out the start of the curve.
+* The TAKEOFF variable controls how smoothly or abruptly the acceleration curve takes off. A higher value will make it take off more abruptly, a lower value smoothens out the start of the curve.
 
-The GROWTH_RATE variable sets the growth rate of the acceleration curve. A lower value will result in a flatter curve which takes longer to reach its LIMIT. A higher value will result in a steeper curve, which will reach its LIMIT faster.
+* The GROWTH_RATE variable sets the growth rate of the acceleration curve. A lower value will result in a flatter curve which takes longer to reach its LIMIT. A higher value will result in a steeper curve, which will reach its LIMIT faster.
 
-The OFFSET variable moves the entire curve towards the right. Offsetting the curve to the right means acceleration will kick in later, which is useful for low speed precision - in effect what you would otherwise have used SNIPING mode for. The maccel feature basically eliminates the need for a sniping mode.
+* The OFFSET variable moves the entire curve towards the right. Offsetting the curve to the right means acceleration will kick in later, which is useful for low speed precision - in effect what you would otherwise have used SNIPING mode for. The maccel feature basically eliminates the need for a sniping mode.
 
-The LIMIT variable sets the lower limit for the acceleration curve. This is the minimum acceleration factor at which the curve will start.
+* The LIMIT variable sets the lower limit for the acceleration curve. This is the minimum acceleration factor at which the curve will start.
 
 A good starting point for tweaking your settings, is to set your default DPI slightly higher than what you'd use without acceleration. Then set your LIMIT variable to a factor that would scale down to what you normally might have set your sniping DPI. For example, if your usual default DPI is 900, you might set it now to 1000. And if your usual sniping DPI is 200, you might set your LIMIT to 0.2 (0.2*1000=200). From there you can start playing around with the variables until you arrive at something to your liking.
 
