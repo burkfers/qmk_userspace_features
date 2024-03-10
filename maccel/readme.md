@@ -105,10 +105,13 @@ A good starting point for tweaking your settings, is to set your default DPI sli
 
 **Debug console**: To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance. Refer to the QMK documentation on how to *enable the console and debugging*, then enable mouse acceleration debugging in `config.h`:
 ```c
-#define MACCEL_DEBUG
-/*
- * Requires enabling float support for printf!
+/**
+ * To view mouse's distance/velocity and curve parameters while configuring maccel,
+ * set `CONSOLE_ENABLE = yes` in `rules.mk`, uncomment the lines below,
+ * and run `qmk console` in the shell.
+ * Note: requires enabling float support for printf!
  */
+#define MACCEL_DEBUG
 #undef PRINTF_SUPPORT_DECIMAL_SPECIFIERS
 #define PRINTF_SUPPORT_DECIMAL_SPECIFIERS 1
 ```
