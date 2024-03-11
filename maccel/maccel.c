@@ -6,8 +6,6 @@
 #include "maccel.h"
 #include "math.h"
 
-static uint32_t maccel_timer;
-
 #ifndef MACCEL_TAKEOFF
 #    define MACCEL_TAKEOFF 2.0 // (K) lower/higher value = curve starts more smoothly/abruptly
 #endif
@@ -103,6 +101,7 @@ void maccel_toggle_enabled(void) {
 #define CONSTRAIN_REPORT(val) (mouse_xy_report_t) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
+    static uint32_t maccel_timer = 0;
     // rounding carry to recycle dropped floats from int mouse reports, to smoothen low speed movements (credit @ankostis)
     static float rounding_carry_x = 0;
     static float rounding_carry_y = 0;
@@ -115,12 +114,12 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
         }
         return mouse_report;
     }
-    // reset timer:
+    // Reset timer on non-zero reports.
     maccel_timer = timer_read32();
     // Reset carry when pointer swaps direction, to follow user's hand.
     if (mouse_report.x * rounding_carry_x < 0) rounding_carry_x = 0;
     if (mouse_report.y * rounding_carry_y < 0) rounding_carry_y = 0;
-    // Limit expensive calls to get device cpi settings only when mouse stationary for > 200ms.
+    // Limit expensive calls to get device cpi settings only when mouse stationary for some time.
     static uint16_t device_cpi = 300;
     if (delta_time > MACCEL_CPI_THROTTLE_MS) {
         device_cpi = pointing_device_get_cpi();
