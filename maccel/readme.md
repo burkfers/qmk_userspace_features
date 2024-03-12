@@ -251,7 +251,7 @@ It is currently unknown how the un-throttled polling when used with `POINTING_DE
 
 ## Breaking changes
 
-### 2024 March 10
+### 2024 March 12
 
 A keycode for toggling mouse acceleration was added: If you enabled maccel keycodes, you must add a fifth keycode to your enum and add it to the shim between the record and takeoff arguments. Don't forget to place it on your keymap!
  
@@ -278,7 +278,7 @@ If you're updating from a previous version, you will have to make manual adjustm
 If you set GROWTH_RATE to your previous value of `STEEPNESS` and keep `TAKEOFF` at a high value (eg. `10`), the behavior will be similar to previous versions.
 
 ## Release history
-- //2024 ?? WIP - Release of improved down scaling accel curve
+- 2024 March 12 - Release of improved down scaling accel curve
 - 2024 March 1 - Release of new four-parameter acceleration curve
 - 2024 February 23 - New four-parameter acceleration curve and improved documentation
 - 2024 February 07 - Experimental new DPI correction to achieve consistent acceleration behavior across different user DPI settings.
