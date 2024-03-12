@@ -157,8 +157,8 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     const mouse_xy_report_t x = CONSTRAIN_REPORT(new_x);
     const mouse_xy_report_t y = CONSTRAIN_REPORT(new_y);
 
-// console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG
+    // console output for debugging (enable/disable in config.h)
     const float distance_out = sqrtf(x * x + y * y);
     const float velocity_out = velocity * maccel_factor;
     printf("MACCEL: DPI:%5i Tko:%6.3f Grw:%6.3f Ofs:%6.3f Lmt:%6.3f | Acc:%7.3f V.in:%7.3f V.out:%+8.3f D.in:%3i D.out:%+8.3f\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, velocity_out - velocity, CONSTRAIN_REPORT(distance), distance_out - CONSTRAIN_REPORT(distance));
