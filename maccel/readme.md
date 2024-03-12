@@ -76,7 +76,7 @@ To minimize the chance of maxing out the mouse reports, it is recommended to def
 See the section on runtime adjusting by keycodes and on via support for installation steps for these optional features.
 
 ## Configuration
-Before configuring maccel, make sure you have turned off your OS acceleration settings: in mouse settings uncheck pointer precision (windows) or pointer acceleration (mac). And make sure there isn't any 3rd party mouse acceleration software running. 
+Before configuring maccel, make sure you have turned off your OS acceleration settings: On Windows, this setting is called "Enhance pointer precision". And make sure there isn't any 3rd party mouse acceleration software running. 
 
 Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
 ```c
