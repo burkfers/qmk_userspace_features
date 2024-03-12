@@ -24,6 +24,22 @@ enum via_maccel_ids {
     // clang-format on
 };
 
+#define MACCEL_VIA_TKO_MIN 0
+#define MACCEL_VIA_TKO_MAX 5
+#define MACCEL_VIA_GRO_MIN 0.01
+#define MACCEL_VIA_GRO_MAX 5
+#define MACCEL_VIA_OFS_MIN 0
+#define MACCEL_VIA_OFS_MAX 15
+#define MACCEL_VIA_LMT_MIN 0
+#define MACCEL_VIA_LMT_MAX 1
+
+#define MACCEL_VIA_UINT16_MIN 0
+#define MACCEL_VIA_UINT16_MAX 60000 // Not using the full range for historic reasons. Should be changed with breaking change requiring via json update.
+
+#define PROJECT(val, rmin, rmax, tmin, tmax) (((float)(val - rmin) / (float)(rmax - rmin)) * (float)(tmax - tmin)) + tmin
+#define PROJECT_TO_VIA(val, rmin, rmax) PROJECT(val, rmin, rmax, MACCEL_VIA_UINT16_MIN, MACCEL_VIA_UINT16_MAX)
+#define PROJECT_FROM_VIA(val, tmin, tmax) PROJECT(val, MACCEL_VIA_UINT16_MIN, MACCEL_VIA_UINT16_MAX, tmin, tmax)
+
 #define COMBINE_UINT8(one, two) (two | (one << 8))
 
 // Handle the data received by the keyboard from the VIA menus
@@ -36,8 +52,7 @@ void maccel_config_set_value(uint8_t *data) {
         case id_maccel_takeoff: {
             uint16_t takeoff = COMBINE_UINT8(value_data[0], value_data[1]);
 
-            // calc uint16 to float: takeoff moves comma and shifts by 0.5, so that 0.5..6.5 fits into 0..60k
-            g_maccel_config.takeoff = (takeoff / 10000.0f) + 0.5;
+            g_maccel_config.takeoff = PROJECT_FROM_VIA(takeoff, MACCEL_VIA_TKO_MIN, MACCEL_VIA_TKO_MAX);
 #ifdef MACCEL_DEBUG
             printf("MACCEL:via: TKO: %.3f grw: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
@@ -46,8 +61,7 @@ void maccel_config_set_value(uint8_t *data) {
         case id_maccel_growth_rate: {
             uint16_t growth_rate = COMBINE_UINT8(value_data[0], value_data[1]);
 
-            // calc uint16 to float: growth_rate only moves the comma
-            g_maccel_config.growth_rate = growth_rate / 10000.0f;
+            g_maccel_config.growth_rate = PROJECT_FROM_VIA(growth_rate, MACCEL_VIA_GRO_MIN, MACCEL_VIA_GRO_MAX);
 #ifdef MACCEL_DEBUG
             printf("MACCEL:via: tko: %.3f GRW: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
@@ -56,8 +70,7 @@ void maccel_config_set_value(uint8_t *data) {
         case id_maccel_offset: {
             uint16_t offset = COMBINE_UINT8(value_data[0], value_data[1]);
 
-            // calc uint16 to float: offset moves comma and shifts by 3, so that -3..3 fits into 0..60k
-            g_maccel_config.offset = (offset / 10000.0f) - 3;
+            g_maccel_config.offset = PROJECT_FROM_VIA(offset, MACCEL_VIA_OFS_MIN, MACCEL_VIA_OFS_MAX);
 #ifdef MACCEL_DEBUG
             printf("MACCEL:via: tko: %.3f grw: %.3f OFS: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
@@ -66,8 +79,7 @@ void maccel_config_set_value(uint8_t *data) {
         case id_maccel_limit: {
             uint16_t limit = COMBINE_UINT8(value_data[0], value_data[1]);
 
-            // calc uint16 to float: offset moves comma, divides by 2 and shifts by 1, so that 1..14 fits into 0..60k
-            g_maccel_config.limit = (limit / 5000.0f) + 1;
+            g_maccel_config.limit = PROJECT_FROM_VIA(limit, MACCEL_VIA_LMT_MIN, MACCEL_VIA_LMT_MAX);
 #ifdef MACCEL_DEBUG
             printf("MACCEL:via: tko: %.3f grw: %.3f ofs: %.3f LMT: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
 #endif
@@ -88,25 +100,26 @@ void maccel_config_get_value(uint8_t *data) {
 
     switch (*value_id) {
         case id_maccel_takeoff: {
-            uint16_t takeoff = (g_maccel_config.takeoff - 0.5) * 5000;
+            // uint16_t takeoff = (g_maccel_config.takeoff - 0.5) / (4.5 / 6) * 10000;
+            uint16_t takeoff = PROJECT_TO_VIA(g_maccel_config.takeoff, MACCEL_VIA_TKO_MIN, MACCEL_VIA_TKO_MAX);
             value_data[0]    = takeoff >> 8;
             value_data[1]    = takeoff & 0xFF;
             break;
         }
         case id_maccel_growth_rate: {
-            uint16_t growth_rate = g_maccel_config.growth_rate * 10000;
+            uint16_t growth_rate = PROJECT_TO_VIA(g_maccel_config.growth_rate, MACCEL_VIA_GRO_MIN, MACCEL_VIA_GRO_MAX);
             value_data[0]        = growth_rate >> 8;
             value_data[1]        = growth_rate & 0xFF;
             break;
         }
         case id_maccel_offset: {
-            uint16_t offset = (g_maccel_config.offset + 3) * 10000;
+            uint16_t offset = PROJECT_TO_VIA(g_maccel_config.offset, MACCEL_VIA_OFS_MIN, MACCEL_VIA_OFS_MAX);
             value_data[0]   = offset >> 8;
             value_data[1]   = offset & 0xFF;
             break;
         }
         case id_maccel_limit: {
-            uint16_t limit = (g_maccel_config.limit - 1) * 5000;
+            uint16_t limit = PROJECT_TO_VIA(g_maccel_config.limit, MACCEL_VIA_LMT_MIN, MACCEL_VIA_LMT_MAX);
             value_data[0]  = limit >> 8;
             value_data[1]  = limit & 0xFF;
             break;
