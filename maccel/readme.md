@@ -253,10 +253,6 @@ It is currently unknown how the un-throttled polling when used with `POINTING_DE
 
 ### 2024 March 12
 
-A keycode for toggling mouse acceleration was added: If you enabled maccel keycodes, you must add a fifth keycode to your enum and add it to the shim between the record and takeoff arguments. Don't forget to place it on your keymap!
- 
-### 2024 March 7
-
 This new release changes the acceleration curve from a up-scaling curve to a down-scaling curve, to match how other acceleration tools work, and to avoid forcing users to set a very low DPI setting - this had been the goal from the start, but it took until now to overcome the technical challenges to make this work smoothly.
 
 See the configuration bit of this readme for an explanation of how the new curve works. This change means that you will have to readjust your variables; but do not worry, it is fairly easy to get this dialed in to *exactly* to how you had it set before:
@@ -265,6 +261,10 @@ See the configuration bit of this readme for an explanation of how the new curve
 * Second, change your LIMIT variable (which is now lower instead of upper limit): $\text{limit}_{new} = \dfrac{{DPI}_{old}}{{DPI}_{new}}$
 * Your other variables can remain the same.
 * If using via, make sure to clear EEPROM for the new settings to take effect.
+
+### 2024 March 10
+
+A keycode for toggling mouse acceleration was added: If you enabled maccel keycodes, you must add a fifth keycode to your enum and add it to the shim between the record and takeoff arguments. Don't forget to place it on your keymap!
 
 ### 2024 March 1
 
@@ -279,6 +279,7 @@ If you set GROWTH_RATE to your previous value of `STEEPNESS` and keep `TAKEOFF` 
 
 ## Release history
 - 2024 March 12 - Release of improved down scaling accel curve
+- 2024 March 10 - Addition of toggle keycode
 - 2024 March 1 - Release of new four-parameter acceleration curve
 - 2024 February 23 - New four-parameter acceleration curve and improved documentation
 - 2024 February 07 - Experimental new DPI correction to achieve consistent acceleration behavior across different user DPI settings.
