@@ -261,8 +261,8 @@ This new release changes the acceleration curve from a up-scaling curve to a dow
 
 See the configuration bit of this readme for an explanation of how the new curve works. This change means that you will have to readjust your variables; but do not worry, it is fairly easy to get this dialed in to *exactly* to how you had it set before:
 
-* First, change your default DPI: $DPI_{new} = DPI_{old} * limit_{old}$
-* Second, change your LIMIT variable (which is now lower instead of upper limit): $limit_{new} = \dfrac{DPI_{old}}{DPI_{new}}$
+* First, change your default DPI: ${DPI}_{new} = {DPI}_{old} * \text{limit}_{old}$
+* Second, change your LIMIT variable (which is now lower instead of upper limit): $\text{limit}_{new} = \dfrac{{DPI}_{old}}{{DPI}_{new}}$
 * Your other variables can remain the same.
 * If using via, make sure to clear EEPROM for the new settings to take effect.
 
