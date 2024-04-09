@@ -68,36 +68,42 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report) {
 }
 ```
 
+To minimize the chance of maxing out the mouse reports, it is recommended to define extended mouse reports in your config.h:
+```c
+#define MOUSE_EXTENDED_REPORT
+```
+
 See the section on runtime adjusting by keycodes and on via support for installation steps for these optional features.
 
 ## Configuration
-
-This accel curve works in opposite direction from what you may be used to from other acceleration tools, due to technical limitations in QMK. It scales pointer sensitivity upwards rather than downwards, which means you will either have to lower your device DPI setting from what you'd normally do, or lower your mouse speed in your operating system's settings, or both.
+Before configuring maccel, make sure you have turned off your OS acceleration settings: On Windows, this setting is called "Enhance pointer precision". And make sure there isn't any 3rd party mouse acceleration software running. 
 
 Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
 ```c
 #define MACCEL_TAKEOFF 2.0      // lower/higher value = curve takes off more smoothly/abruptly
 #define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster 
 #define MACCEL_OFFSET 2.2       // lower/higher value = acceleration kicks in earlier/later
-#define MACCEL_LIMIT 6.0        // upper limit of accel curve (maximum acceleration factor)
+#define MACCEL_LIMIT 0.2        // lower limit of accel curve (minimum acceleration factor)
 ```
-[![](assets/accel_curve.png)](https://www.desmos.com/calculator/g6zxh5rt44)
+[![](assets/accel_curve.png)](https://www.desmos.com/calculator/k9vr0y2gev)
 
-The graph above shows the acceleration curve. You can interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: at the start of the curve the factor is 1, and your mouse sensitivity will be equal to your default DPI setting. At the end of the curve, the factor approaches a limit which can be set by the LIMIT variable. The limit is 6 in this example and will result in a maximum mouse sensitivity of 6 times your default DPI.
+The graph above shows the acceleration curve. You can interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: the curve maxes out at 1, meaning your mouse sensitivity will never go higher than your default DPI setting; at the start of the curve your sensitivity is scaled down to a minimum that can be set by the LIMIT variable. The limit in this example is 0.2, which means at the lowest speeds your mouse sensitivity is scaled down to an equivalent of 0.2 times your default DPI.
 
-If you click on the image of the curve, you will be linked to Desmos, where you can play around with the variables to understand how each of them affect the shape of the curve. But in short:
+**If you click on the image of the curve**, you will be linked to Desmos, where you can play around with the variables to understand how each of them affect the shape of the curve. But in short:
 
-The TAKEOFF variable controls how smoothly or abruptly the acceleration curve takes off. A higher value will make it take off more abruptly, a lower value smoothens out the start of the curve.
+* The TAKEOFF variable controls how smoothly or abruptly the acceleration curve takes off. A higher value will make it take off more abruptly, a lower value smoothens out the start of the curve.
 
-The GROWTH_RATE variable sets the growth rate of the acceleration curve. A lower value will result in a flatter curve which takes longer to reach its LIMIT. A higher value will result in a steeper curve, which will reach its LIMIT faster.
+* The GROWTH_RATE variable sets the growth rate of the acceleration curve. A lower value will result in a flatter curve which takes longer to reach its LIMIT. A higher value will result in a steeper curve, which will reach its LIMIT faster.
 
-The OFFSET variable moves the entire curve towards left/right. Offsetting the curve to the right means acceleration will kick in later, which is useful for low speed precision - in effect what you would otherwise have used SNIPING mode for. The maccel feature basically eliminates the need for a sniping mode.
+* The OFFSET variable moves the entire curve towards the right. Offsetting the curve to the right means acceleration will kick in later, which is useful for low speed precision - in effect what you would otherwise have used SNIPING mode for. The maccel feature basically eliminates the need for a sniping mode.
 
-The LIMIT variable sets the upper limit for the acceleration curve. This is the maximum acceleration factor the curve will reach.
+* The LIMIT variable sets the lower limit for the acceleration curve. This is the minimum acceleration factor at which the curve will start. In effect this adjusts the sensitivity for low speed precision movements.
 
-A good starting point for tweaking your settings, is to set your default DPI to what you'd normally have set your sniping DPI. Then set the LIMIT variable to a factor that results in a bit higher than your usual default DPI. For example, if my usual settings are a default DPI of 1000 and a sniping DPI of 200, I would now set my default DPI to 200, and set my LIMIT variable to 6, which will result in an equivalent DPI scaling of 200*6=1200 at the upper limit of the acceleration curve. From there you can start playing around with the variables until you arrive at something to your liking.
+* The upper limit of the curve is fixed at 1, which means that at high speed sensitivity equals your default DPI. If you want to adjust high speed sensitivity, adjust your DPI.
 
-To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. Refer to the QMK documentation on how to *enable the console and debugging*, then enable mouse acceleration debugging in `config.h`:
+A good starting point for tweaking your settings, is to set your default DPI slightly higher than what you'd use without acceleration. Then set your LIMIT variable to a factor that would scale down to what you normally might have set your sniping DPI. For example, if your usual default DPI is 900, you might set it now to 1000. And if your usual sniping DPI is 200, you might set your LIMIT to 0.2 (0.2*1000=200). From there you can start playing around with the variables until you arrive at something to your liking.
+
+**Debug console**: To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance. Refer to the QMK documentation on how to *enable the console and debugging*, then enable mouse acceleration debugging in `config.h`:
 ```c
 #define MACCEL_DEBUG
 /*
@@ -106,16 +112,6 @@ To aid in dialing in your settings just right, a debug mode exists to print math
 #undef PRINTF_SUPPORT_DECIMAL_SPECIFIERS
 #define PRINTF_SUPPORT_DECIMAL_SPECIFIERS 1
 ```
-
-The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance.
-
-Finally, linearity across different user-CPI settings works better when pointer task throttling is enforced, ie. add something like this in your `config.h`:
-
-```c
-// Fixed pointer-task frequency needed for consistent acceleration across different user CPIs.
-#undef  POINTING_DEVICE_TASK_THROTTLE_MS
-#define POINTING_DEVICE_TASK_THROTTLE_MS 5
-``` 
 
 ## Runtime adjusting of curve parameters by keycodes (optional)
 
@@ -236,21 +232,40 @@ Finally, after flashing the firmware to your board, load the custom via definiti
 
 ## Limitations
 
-With an unfavorable combination of `POINTING_DEVICE_THROTTLE_MS` and higher DPI, you may run into issues of peaking the maximum movement. Enable extended mouse reports by adding the following define in `config.h` to make this much less likely:
-```c
-#define MOUSE_EXTENDED_REPORT
-```
+**Mac OS compatibility:** 
 
-The maccel feature has so far only been properly tested with PMW3360 sensor. However, it should work fine with all other QMK compatible sensors and devices as well, but the behavior may not be 100% consistent across different DPI settings. Hence it might be a bit harder to dial in your variable preferences for those devices. This is due to a device-specific parameter in the calculations, that hasn't yet been determined for other devices than the PMW3360 sensor.
+Unfortunately it seems maccel does not work well together with Mac OS. We cannot say with certainty why, but it seems like Apple does some post processing to the mouse reports that distorts the maccel result, even when the OS level acceleration is disabled. But some consolation for mac users: the default mac OS acceleration implementation seems to be quite good. 
 
-This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. Tested only on RP2040!
+**Sensor compatibility:**
+* PMW3360: fully compatible, elaborately tested
+* Other PMW33xx sensors will very likely perform equally well (but not tested so far)
+* Cirque trackpad: compatible, limited testing
+* Azoteq: still some issues to be resolved, not yet compatible
+* No other QMK compatible sensors have been tested so far. We expect most sensors to work fine with maccel, but there could always be unexpected driver/firmware related conflicts we are not aware of.
+* If you are using maccel successfully (or unsuccessfully) with a sensor that isn't listed here, we'd love to hear!
+
+**MCU compatibility:**
+* This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. So far tested only on RP2040!
+
+It is currently unknown how the un-throttled polling when used with `POINTING_DEVICE_MOTION_PIN` would interact with the expensive calculations.
 
 ## Breaking changes
+
+### 2024 March 12
+
+This new release changes the acceleration curve from a up-scaling curve to a down-scaling curve, to match how other acceleration tools work, and to avoid forcing users to set a very low DPI setting - this had been the goal from the start, but it took until now to overcome the technical challenges to make this work smoothly.
+
+See the configuration bit of this readme for an explanation of how the new curve works. This change means that you will have to readjust your variables; but do not worry, it is fairly easy to get this dialed in to *exactly* to how you had it set before:
+
+* First, change your default DPI: $DPI_{new} = DPI_{old} * {limit}_{old}$
+* Second, change your LIMIT variable (which is now lower instead of upper limit): $limit_{new} = \dfrac{DPI_{old}}{DPI_{new}}$
+* Your other variables can remain the same.
+* If using via, make sure to clear EEPROM for the new settings to take effect.
 
 ### 2024 March 10
 
 A keycode for toggling mouse acceleration was added: If you enabled maccel keycodes, you must add a fifth keycode to your enum and add it to the shim between the record and takeoff arguments. Don't forget to place it on your keymap!
- 
+
 ### 2024 March 1
 
 If you're updating from a previous version, you will have to make manual adjustments to your integration. Refer to the instructions for details on what the current version expects:
@@ -263,6 +278,8 @@ If you're updating from a previous version, you will have to make manual adjustm
 If you set GROWTH_RATE to your previous value of `STEEPNESS` and keep `TAKEOFF` at a high value (eg. `10`), the behavior will be similar to previous versions.
 
 ## Release history
+- 2024 March 12 - Release of improved down scaling accel curve
+- 2024 March 10 - Addition of toggle keycode
 - 2024 March 1 - Release of new four-parameter acceleration curve
 - 2024 February 23 - New four-parameter acceleration curve and improved documentation
 - 2024 February 07 - Experimental new DPI correction to achieve consistent acceleration behavior across different user DPI settings.
@@ -272,7 +289,7 @@ If you set GROWTH_RATE to your previous value of `STEEPNESS` and keep `TAKEOFF` 
 Thanks to everyone who helped!
 Including, but not limited to:
 - Wimads (@wimads) and burkfers (@burkfers) wrote most of the code
+- ankostis (@ankostis) for catalyzing discussion about improving the acceleration curve and providing several enhancements
 - Quentin (@balanstik) for insightful commentary on the math, and testing
 - ouglop (@ouglop) for insightful commentary on the math
 - Drashna Jael're (@drashna) for coding tips and their invaluable bag of magic C tricks
-- ankostis (@ankostis) for catalyzing discussion about improving the acceleration curve

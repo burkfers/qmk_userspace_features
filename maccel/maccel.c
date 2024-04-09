@@ -18,10 +18,16 @@ static uint32_t maccel_timer;
 #    define MACCEL_OFFSET 2.2 // lower/higher value = acceleration kicks in earlier/later
 #endif
 #ifndef MACCEL_LIMIT
-#    define MACCEL_LIMIT 6.0 // upper limit of accel curve (maximum acceleration factor)
+#    define MACCEL_LIMIT 0.2 // lower limit of accel curve (minimum acceleration factor)
 #endif
 #ifndef MACCEL_CPI_THROTTLE_MS
 #    define MACCEL_CPI_THROTTLE_MS 200 // milliseconds to wait between requesting the device's current DPI
+#endif
+#ifndef MACCEL_LIMIT_UPPER
+#    define MACCEL_LIMIT_UPPER 1 // upper limit of accel curve, recommended to leave at 1; adjust DPI setting instead.
+#endif
+#ifndef MACCEL_ROUNDING_CARRY_TIMEOUT_MS
+#    define MACCEL_ROUNDING_CARRY_TIMEOUT_MS 200 // milliseconds after which to reset quantization error correction (forget rounding remainder)
 #endif
 
 maccel_config_t g_maccel_config = {
@@ -45,7 +51,7 @@ maccel_config_t g_maccel_config = {
 #        define MACCEL_OFFSET_STEP 0.1f
 #    endif
 #    ifndef MACCEL_LIMIT_STEP
-#        define MACCEL_LIMIT_STEP 0.1f
+#        define MACCEL_LIMIT_STEP 0.01f
 #    endif
 #endif
 
@@ -75,7 +81,7 @@ void maccel_set_offset(float val) {
     g_maccel_config.offset = val;
 }
 void maccel_set_limit(float val) {
-    if (val >= 1) { // limit less than 1 leads to nonsensical results
+    if (val >= 0) {
         g_maccel_config.limit = val;
     }
 }
@@ -97,14 +103,26 @@ void maccel_toggle_enabled(void) {
 #define CONSTRAIN_REPORT(val) (mouse_xy_report_t) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
+    // rounding carry to recycle dropped floats from int mouse reports, to smoothen low speed movements (credit @ankostis)
+    static float rounding_carry_x = 0;
+    static float rounding_carry_y = 0;
+    // time since last mouse report:
+    const uint16_t delta_time = timer_elapsed32(maccel_timer);
+    // skip maccel maths if report = 0, or if maccel not enabled.
     if ((mouse_report.x == 0 && mouse_report.y == 0) || !g_maccel_config.enabled) {
         return mouse_report;
     }
-
-    // time since last mouse report:
-    const uint16_t delta_time = timer_elapsed32(maccel_timer);
-    maccel_timer              = timer_read32();
-    // get device cpi setting, only call when mouse hasn't moved since more than 200ms
+    // reset timer:
+    maccel_timer = timer_read32();
+    // Reset carry if too much time passed
+    if (delta_time > MACCEL_ROUNDING_CARRY_TIMEOUT_MS) {
+        rounding_carry_x = 0;
+        rounding_carry_y = 0;
+    }
+    // Reset carry when pointer swaps direction, to follow user's hand.
+    if (mouse_report.x * rounding_carry_x < 0) rounding_carry_x = 0;
+    if (mouse_report.y * rounding_carry_y < 0) rounding_carry_y = 0;
+    // Limit expensive calls to get device cpi settings only when mouse stationary for > 200ms.
     static uint16_t device_cpi = 300;
     if (delta_time > MACCEL_CPI_THROTTLE_MS) {
         device_cpi = pointing_device_get_cpi();
@@ -117,17 +135,23 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     const float velocity_raw = distance / delta_time;
     // correct raw velocity for dpi
     const float velocity = dpi_correction * velocity_raw;
-    // calculate mouse acceleration factor: f(dv) = c - ((c-1) / ((1 + e^(x(x - b)) * a/z)))
+    // letter variables for readability of maths:
     const float k = g_maccel_config.takeoff;
     const float g = g_maccel_config.growth_rate;
     const float s = g_maccel_config.offset;
     const float m = g_maccel_config.limit;
-    // acceleration factor: y(x) = M - (M - 1) / {1 + e^[K(x - S)]}^(G/K)
-    // Generalised Sigmoid Function, see https://www.desmos.com/calculator/xkhejelty8
-    const float maccel_factor = m - (m - 1) / powf(1 + expf(k * (velocity - s)), g / k);
-    // calculate accelerated delta X and Y values and clamp:
-    const mouse_xy_report_t x = CONSTRAIN_REPORT(mouse_report.x * maccel_factor);
-    const mouse_xy_report_t y = CONSTRAIN_REPORT(mouse_report.y * maccel_factor);
+    // acceleration factor: f(v) = 1 - (1 - M) / {1 + e^[K(v - S)]}^(G/K):
+    // Generalised Sigmoid Function, see https://www.desmos.com/calculator/k9vr0y2gev
+    const float maccel_factor = MACCEL_LIMIT_UPPER - (MACCEL_LIMIT_UPPER - m) / powf(1 + expf(k * (velocity - s)), g / k);
+    // multiply mouse reports by acceleration factor, and account for previous quantization errors:
+    const float new_x = rounding_carry_x + maccel_factor * mouse_report.x;
+    const float new_y = rounding_carry_y + maccel_factor * mouse_report.y;
+    // Accumulate any difference from next integer (quantization).
+    rounding_carry_x = new_x - (int)new_x;
+    rounding_carry_y = new_y - (int)new_y;
+    // clamp values
+    const mouse_xy_report_t x = CONSTRAIN_REPORT(new_x);
+    const mouse_xy_report_t y = CONSTRAIN_REPORT(new_y);
 
 // console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG

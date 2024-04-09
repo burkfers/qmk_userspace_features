@@ -23,3 +23,7 @@ ifeq
 ifdef
 trackpad
 Desmos
+rmin
+rmax
+tmin
+tmax
