@@ -4,13 +4,13 @@ This feature was born from the frustration of not having a tweakable acceleratio
 
 ## Installation
 
-### Installation (keymap)
+### Installation step 1a (keymap)
 
-Choose this route if you do not maintain a userspace.
+Choose this route if you do not maintain a userspace; if you do, then skip to the next step (1b).
 
 Place the `maccel` directory in your keymap directory. For example, if you were using the `via` keymap on a BastardKB Dilemma Max, you'd place it to be `keyboards/bastardkb/dilemma/4x6_4/keymaps/via/maccel/`.
 
-Add to `rules.mk` (Create it if it does not exist):
+Add the following to the `rules.mk` file in your keymap folder (Create the file if not present):
 ```make
 # MACCEL
 SRC += ./maccel/maccel.c
@@ -29,11 +29,11 @@ Add to your `keymap.c`, near the top:
 #endif
 ```
 
-Continue with "Installation (common)", below.
+Continue with "Installation step 2 (common)", below.
 
-### Installation (userspace)
+### Installation step 1b (userspace)
 
-Choose this route if you maintain a userspace.
+Choose this route if you maintain a userspace; if you don't, then skip to the next step (2).
 
 Place the `maccel` directory within `features/` in your userspace. For example, if your username was burkfers, you'd place it to be `users/burkfers/features/maccel/`.
 
@@ -54,9 +54,9 @@ Add to your userspace source file, near the top:
 #endif
 ```
 
-Continue with "Installation (common)", below.
+Continue with "Installation step 2 (common)", below.
 
-### Installation (common)
+### Installation step 2 (common)
 
 Make sure the `pointing_device_task_user()` function in your `keymap.c` or userspace-sources exists, and contains the following code:
 ```c
@@ -85,9 +85,10 @@ Several characteristics of the acceleration curve can be tweaked by adding relev
 #define MACCEL_OFFSET 2.2       // lower/higher value = acceleration kicks in earlier/later
 #define MACCEL_LIMIT 0.2        // lower limit of accel curve (minimum acceleration factor)
 ```
-[![](assets/accel_curve.png)](https://www.desmos.com/calculator/k9vr0y2gev)
 
-The graph above shows the acceleration curve. You can interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input speed will be multiplied, resulting in your new output speed on screen. You can also understand this as a DPI scaling factor: the curve maxes out at 1, meaning your mouse sensitivity will never go higher than your default DPI setting; at the start of the curve your sensitivity is scaled down to a minimum that can be set by the LIMIT variable. The limit in this example is 0.2, which means at the lowest speeds your mouse sensitivity is scaled down to an equivalent of 0.2 times your default DPI.
+The graph below shows the acceleration curve. You can interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input velocity will be multiplied, resulting in your new output velocity on screen. You can also understand this as a DPI scaling factor: the curve maxes out at 1, meaning your mouse sensitivity will never go higher than your default DPI setting; at the start of the curve your sensitivity is scaled down to a minimum that can be set by the LIMIT variable. The limit in this example is 0.2, which means at the lowest velocity your mouse sensitivity is scaled down to an equivalent of 0.2 times your default DPI.
+
+[![](assets/accel_curve.png)](https://www.desmos.com/calculator/k9vr0y2gev)
 
 **If you click on the image of the curve**, you will be linked to Desmos, where you can play around with the variables to understand how each of them affect the shape of the curve. But in short:
 
@@ -103,7 +104,7 @@ The graph above shows the acceleration curve. You can interpret this graph as fo
 
 A good starting point for tweaking your settings, is to set your default DPI slightly higher than what you'd use without acceleration. Then set your LIMIT variable to a factor that would scale down to what you normally might have set your sniping DPI. For example, if your usual default DPI is 900, you might set it now to 1000. And if your usual sniping DPI is 200, you might set your LIMIT to 0.2 (0.2*1000=200). From there you can start playing around with the variables until you arrive at something to your liking.
 
-**Debug console**: To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance. Refer to the QMK documentation on how to *enable the console and debugging*, then enable mouse acceleration debugging in `config.h`:
+**Debug console**: To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance. Refer to the QMK documentation on how to [*enable the console and debugging*](https://docs.qmk.fm/#/faq_debug?id=debugging), then enable mouse acceleration debugging by adding the following defines in `config.h`:
 ```c
 #define MACCEL_DEBUG
 /*
@@ -115,7 +116,7 @@ A good starting point for tweaking your settings, is to set your default DPI sli
 
 ## Runtime adjusting of curve parameters by keycodes (optional)
 
-### Additional required installation steps
+### Additional installation steps for adding keycodes:
 
 To use keycodes to adjust the parameters without recompiling, two more build steps are required.
 First, add five keycodes to your keycode enum. You may choose different names, as long as you use the same names in the following step. If you are not yet using custom keycodes, add the following snippet to `keymap.c`:
@@ -150,7 +151,7 @@ Once the additional keycodes and shim are added, this feature can be enabled in 
 Lastly, place the new keycodes on your keymap.
 
 ---
-### Acceleration keycode usage
+### Acceleration keycode usage:
 
 The four keycodes can be used to adjust the curve parameters. This is *not* persisted unless you also enabled the via option - Adjusted values are printed to the console to aid in finding the right settings for `config.h`.
 The step keys will adjust the parameters by the following amounts, which can optionally be adjusted:
@@ -160,7 +161,7 @@ The step keys will adjust the parameters by the following amounts, which can opt
 | Takeoff      | `+0.01`            | `MACCEL_TAKEOFF_STEP`     |
 | Growth rate  | `+0.01`            | `MACCEL_GROWTH_RATE_STEP` |
 | Offset       | `+0.1`             | `MACCEL_OFFSET_STEP`      |
-| Limit        | `+0.1`             | `MACCEL_LIMIT_STEP`       |
+| Limit        | `+0.01`            | `MACCEL_LIMIT_STEP`       |
 
 The modifier keys can be used to alter the step effect:
 
@@ -173,13 +174,16 @@ Modifiers can be combined.
 
 With every adjustment, an informational message is printed to the console.
 
-## VIA support
+## VIA support (optional)
+Mouse acceleration can now be configured though via. 
 
 ![](assets/via.png)
+\* *note that VIA unfortunately cannot show the numeric values for the sliders, so you will still need to use the debug console to monitor any changes you make to the variables. (The numbers shown in the image have just been edited in to indicate the range of the sliders).*
 
-Mouse acceleration can now be configured though via. If your keyboard is not already supported by via, you must first [create a via definition](https://www.caniusevia.com/docs/specification).
+### Additional installation steps for adding VIA support:
+If your keyboard is not already supported by via, you must first [create a via definition](https://www.caniusevia.com/docs/specification).
 
-Add to `rules.mk`, *before* the include added previously:
+Add the following to `rules.mk`, *before* the include added previously:
 ```make
 MACCEL_VIA_ENABLE = yes
 ``````
@@ -216,7 +220,9 @@ Finally, after flashing the firmware to your board, load the custom via definiti
 
 # Setup checklist
 
-- Place files in `users/YOUR_USERNAME/features/maccel/`
+- Place files in either:
+    - `keyboards/YOUR KEYBOARD/keymaps/YOUR KEYMAP/maccel/` 
+    - OR in `users/YOUR_USERNAME/features/maccel/`
 - Include `maccel/rules.mk` in your `rules.mk`
 - Shim `pointing_device_task_user`
 - Add configuration defines for parameters and optionally debugging
