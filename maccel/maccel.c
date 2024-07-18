@@ -6,29 +6,34 @@
 #include "maccel.h"
 #include "math.h"
 
-static uint32_t maccel_timer;
-
 #ifndef MACCEL_TAKEOFF
-#    define MACCEL_TAKEOFF 2.0 // lower/higher value = curve starts more smoothly/abruptly
+#    define MACCEL_TAKEOFF 2.0 // (K) lower/higher value = curve starts more smoothly/abruptly
 #endif
 #ifndef MACCEL_GROWTH_RATE
-#    define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster
+#    define MACCEL_GROWTH_RATE 0.25 // (G) lower/higher value = curve reaches its upper limit slower/faster
 #endif
 #ifndef MACCEL_OFFSET
-#    define MACCEL_OFFSET 2.2 // lower/higher value = acceleration kicks in earlier/later
+#    define MACCEL_OFFSET 2.2 // (S) lower/higher value = acceleration kicks in earlier/later
 #endif
 #ifndef MACCEL_LIMIT
-#    define MACCEL_LIMIT 0.2 // lower limit of accel curve (minimum acceleration factor)
-#endif
-#ifndef MACCEL_CPI_THROTTLE_MS
-#    define MACCEL_CPI_THROTTLE_MS 200 // milliseconds to wait between requesting the device's current DPI
+#    define MACCEL_LIMIT 0.2 // (M) lower limit of accel curve (minimum acceleration factor)
 #endif
 #ifndef MACCEL_LIMIT_UPPER
 #    define MACCEL_LIMIT_UPPER 1 // upper limit of accel curve, recommended to leave at 1; adjust DPI setting instead.
 #endif
-#ifndef MACCEL_ROUNDING_CARRY_TIMEOUT_MS
-#    define MACCEL_ROUNDING_CARRY_TIMEOUT_MS 200 // milliseconds after which to reset quantization error correction (forget rounding remainder)
+#ifndef MACCEL_CPI_THROTTLE_MS
+#    define MACCEL_CPI_THROTTLE_MS 200 // milliseconds to wait between requesting the device's current DPI
 #endif
+#ifndef MACCEL_ROUNDING_CARRY_TIMEOUT_MS
+#    define MACCEL_ROUNDING_CARRY_TIMEOUT_MS 300 // Elapsed time after which quantization error gets reset.
+#endif
+/**
+ * Scale acceleration curve's v-input so that its params are not uncannily small
+ * and floats do not overflow in the accel formula (eg. `exp(709.8)` for doubles).
+ * Eventually the accel formula is calculated as if the pointer reports @ 1000 CPI,
+ * but "counts" are expressed as float (vs integer for the hw "counts").
+ */
+#define MACCEL_MAGNIFICATION_DPI 1000.0
 
 maccel_config_t g_maccel_config = {
     // clang-format off
@@ -103,6 +108,7 @@ void maccel_toggle_enabled(void) {
 #define CONSTRAIN_REPORT(val) (mouse_xy_report_t) _CONSTRAIN(val, XY_REPORT_MIN, XY_REPORT_MAX)
 
 report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
+    static uint32_t maccel_timer = 0;
     // rounding carry to recycle dropped floats from int mouse reports, to smoothen low speed movements (credit @ankostis)
     static float rounding_carry_x = 0;
     static float rounding_carry_y = 0;
@@ -110,25 +116,23 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     const uint16_t delta_time = timer_elapsed32(maccel_timer);
     // skip maccel maths if report = 0, or if maccel not enabled.
     if ((mouse_report.x == 0 && mouse_report.y == 0) || !g_maccel_config.enabled) {
+        if (delta_time > MACCEL_ROUNDING_CARRY_TIMEOUT_MS) {
+            rounding_carry_x = rounding_carry_y = 0;
+        }
         return mouse_report;
     }
-    // reset timer:
+    // Reset timer on non-zero reports.
     maccel_timer = timer_read32();
-    // Reset carry if too much time passed
-    if (delta_time > MACCEL_ROUNDING_CARRY_TIMEOUT_MS) {
-        rounding_carry_x = 0;
-        rounding_carry_y = 0;
-    }
     // Reset carry when pointer swaps direction, to follow user's hand.
     if (mouse_report.x * rounding_carry_x < 0) rounding_carry_x = 0;
     if (mouse_report.y * rounding_carry_y < 0) rounding_carry_y = 0;
-    // Limit expensive calls to get device cpi settings only when mouse stationary for > 200ms.
+    // Limit expensive calls to get device cpi settings only when mouse stationary for some time.
     static uint16_t device_cpi = 300;
     if (delta_time > MACCEL_CPI_THROTTLE_MS) {
         device_cpi = pointing_device_get_cpi();
     }
     // calculate dpi correction factor (for normalizing velocity range across different user dpi settings)
-    const float dpi_correction = (float)1000.0f / device_cpi;
+    const float dpi_correction = (float)MACCEL_MAGNIFICATION_DPI / device_cpi;
     // calculate euclidean distance moved (sqrt(x^2 + y^2))
     const float distance = sqrtf(mouse_report.x * mouse_report.x + mouse_report.y * mouse_report.y);
     // calculate delta velocity: dv = distance/dt
@@ -153,11 +157,11 @@ report_mouse_t pointing_device_task_maccel(report_mouse_t mouse_report) {
     const mouse_xy_report_t x = CONSTRAIN_REPORT(new_x);
     const mouse_xy_report_t y = CONSTRAIN_REPORT(new_y);
 
-// console output for debugging (enable/disable in config.h)
 #ifdef MACCEL_DEBUG
+    // console output for debugging (enable/disable in config.h)
     const float distance_out = sqrtf(x * x + y * y);
     const float velocity_out = velocity * maccel_factor;
-    printf("MACCEL: DPI:%4i Tko: %.3f Grw: %.3f Ofs: %.3f Lmt: %.3f | Fct: %.3f v.in: %.3f v.out: %.3f d.in: %3i d.out: %3i\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, velocity_out, CONSTRAIN_REPORT(distance), CONSTRAIN_REPORT(distance_out));
+    printf("MACCEL: DPI:%5i Tko:%6.3f Grw:%6.3f Ofs:%6.3f Lmt:%6.3f | Acc:%7.3f V.in:%7.3f V.out:%+8.3f D.in:%3i D.out:%+8.3f\n", device_cpi, g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit, maccel_factor, velocity, velocity_out - velocity, CONSTRAIN_REPORT(distance), distance_out - CONSTRAIN_REPORT(distance));
 #endif // MACCEL_DEBUG
 
     // report back accelerated values
@@ -187,22 +191,30 @@ bool process_record_maccel(uint16_t keycode, keyrecord_t *record, uint16_t toggl
         }
         if (keycode == takeoff) {
             maccel_set_takeoff(maccel_get_takeoff() + get_mod_step(MACCEL_TAKEOFF_STEP));
+#    ifdef MACCEL_DEBUG
             printf("MACCEL:keycode: TKO: %.3f gro: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
+#    endif // MACCEL_DEBUG
             return false;
         }
         if (keycode == growth_rate) {
             maccel_set_growth_rate(maccel_get_growth_rate() + get_mod_step(MACCEL_GROWTH_RATE_STEP));
+#    ifdef MACCEL_DEBUG
             printf("MACCEL:keycode: tko: %.3f GRO: %.3f ofs: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
+#    endif // MACCEL_DEBUG
             return false;
         }
         if (keycode == offset) {
             maccel_set_offset(maccel_get_offset() + get_mod_step(MACCEL_OFFSET_STEP));
+#    ifdef MACCEL_DEBUG
             printf("MACCEL:keycode: tko: %.3f gro: %.3f OFS: %.3f lmt: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
+#    endif // MACCEL_DEBUG
             return false;
         }
         if (keycode == limit) {
             maccel_set_limit(maccel_get_limit() + get_mod_step(MACCEL_LIMIT_STEP));
+#    ifdef MACCEL_DEBUG
             printf("MACCEL:keycode: tko: %.3f gro: %.3f ofs: %.3f LMT: %.3f\n", g_maccel_config.takeoff, g_maccel_config.growth_rate, g_maccel_config.offset, g_maccel_config.limit);
+#    endif // MACCEL_DEBUG
             return false;
         }
     }

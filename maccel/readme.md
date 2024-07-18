@@ -80,10 +80,11 @@ Before configuring maccel, make sure you have turned off your OS acceleration se
 
 Several characteristics of the acceleration curve can be tweaked by adding relevant defines to `config.h`:
 ```c
-#define MACCEL_TAKEOFF 2.0      // lower/higher value = curve takes off more smoothly/abruptly
-#define MACCEL_GROWTH_RATE 0.25 // lower/higher value = curve reaches its upper limit slower/faster 
-#define MACCEL_OFFSET 2.2       // lower/higher value = acceleration kicks in earlier/later
-#define MACCEL_LIMIT 0.2        // lower limit of accel curve (minimum acceleration factor)
+/** Mouse acceleration curve parameters: https://www.desmos.com/calculator/g6zxh5rt44 */
+#define MACCEL_TAKEOFF 2.0      // (K) lower/higher value = curve takes off more smoothly/abruptly
+#define MACCEL_GROWTH_RATE 0.25 // (G) lower/higher value = curve reaches its upper limit slower/faster 
+#define MACCEL_OFFSET 2.2       // (S) lower/higher value = acceleration kicks in earlier/later
+#define MACCEL_LIMIT 0.2        // (M) upper limit of accel curve (maximum acceleration factor)
 ```
 
 The graph below shows the acceleration curve. You can interpret this graph as follows: the horizontal axis is input velocity (ie. how fast you are physically moving your mouse/trackball/trackpad); the vertical axis is the acceleration factor, which is the factor with which the input velocity will be multiplied, resulting in your new output velocity on screen. You can also understand this as a DPI scaling factor: the curve maxes out at 1, meaning your mouse sensitivity will never go higher than your default DPI setting; at the start of the curve your sensitivity is scaled down to a minimum that can be set by the LIMIT variable. The limit in this example is 0.2, which means at the lowest velocity your mouse sensitivity is scaled down to an equivalent of 0.2 times your default DPI.
@@ -106,13 +107,24 @@ A good starting point for tweaking your settings, is to set your default DPI sli
 
 **Debug console**: To aid in dialing in your settings just right, a debug mode exists to print mathy details to the console. The debug console will print your current DPI setting and variable settings, as well as the acceleration factor, the input and output velocity, and the input and output distance. Refer to the QMK documentation on how to [*enable the console and debugging*](https://docs.qmk.fm/#/faq_debug?id=debugging), then enable mouse acceleration debugging by adding the following defines in `config.h`:
 ```c
-#define MACCEL_DEBUG
-/*
- * Requires enabling float support for printf!
+/**
+ * To view mouse's distance/velocity and curve parameters while configuring maccel,
+ * set `CONSOLE_ENABLE = yes` in `rules.mk`, uncomment the lines below,
+ * and run `qmk console` in the shell.
+ * Note: requires enabling float support for printf!
  */
+#define MACCEL_DEBUG
 #undef PRINTF_SUPPORT_DECIMAL_SPECIFIERS
 #define PRINTF_SUPPORT_DECIMAL_SPECIFIERS 1
 ```
+
+Finally, linearity for low CPI settings works better when pointer task throttling enforces a lower frequency from the default 1ms, to have more time to gather "dots", ie. add something like this in your `config.h`:
+
+```c
+// Reduce pointer-task frequency (1ms --> 5ms) for consistent acceleration on lower CPIs.
+#undef  POINTING_DEVICE_TASK_THROTTLE_MS
+#define POINTING_DEVICE_TASK_THROTTLE_MS 5
+``` 
 
 ## Runtime adjusting of curve parameters by keycodes (optional)
 
