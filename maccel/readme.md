@@ -245,13 +245,14 @@ Unfortunately it seems maccel does not work well together with Mac OS. We cannot
 **Sensor compatibility:**
 * PMW3360: fully compatible, elaborately tested
 * Other PMW33xx sensors will very likely perform equally well (but not tested so far)
+* adns5050: compatible, tested
 * Cirque trackpad: compatible, limited testing
 * Azoteq: still some issues to be resolved, not yet compatible
 * No other QMK compatible sensors have been tested so far. We expect most sensors to work fine with maccel, but there could always be unexpected driver/firmware related conflicts we are not aware of.
 * If you are using maccel successfully (or unsuccessfully) with a sensor that isn't listed here, we'd love to hear!
 
 **MCU compatibility:**
-* This feature makes extensive use of floating point operations, and as such is not likely to work on AVR processors. So far tested only on RP2040!
+Despite our initial worries about the extensive use of floating point operations likely not working well on AVR, it's been tested and works adequately.
 
 It is currently unknown how the un-throttled polling when used with `POINTING_DEVICE_MOTION_PIN` would interact with the expensive calculations.
 
@@ -299,3 +300,4 @@ Including, but not limited to:
 - Quentin (@balanstik) for insightful commentary on the math, and testing
 - ouglop (@ouglop) for insightful commentary on the math
 - Drashna Jael're (@drashna) for coding tips and their invaluable bag of magic C tricks
+- bcl (@energetic_beagle_99245) for testing on AVR with an adns5050 sensor
