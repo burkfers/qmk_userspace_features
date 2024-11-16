@@ -240,19 +240,21 @@ Finally, after flashing the firmware to your board, load the custom via definiti
 
 **Mac OS compatibility:** 
 
-Unfortunately it seems maccel does not work well together with Mac OS. We cannot say with certainty why, but it seems like Apple does some post processing to the mouse reports that distorts the maccel result, even when the OS level acceleration is disabled. But some consolation for mac users: the default mac OS acceleration implementation seems to be quite good. 
+*It's complicated...* Yes, you can use maccel with MacOS, but there is some caveats to consider:
+* Even after disabling the OS level acceleration, macOS does some kind of post processing to smooth cursor movement, which you cannot disable. This will distort the result of maccel, which will make it harder to dial in, and the result may or may not be satisfactory.
+* Secondly, the OS level acceleration of macOS seems to be quite good, so whether maccel (with the smoothing issue in mind) will actually be an improvement is debatable. We've heard opinions both ways from macOS users. So in other words, your mileage may vary. 
 
 **Sensor compatibility:**
 * PMW3360: fully compatible, elaborately tested
 * Other PMW33xx sensors will very likely perform equally well (but not tested so far)
 * adns5050: compatible, tested
 * Cirque trackpad: compatible, limited testing
-* Azoteq: still some issues to be resolved, not yet compatible
+* Azoteq: not compatible, due to issues in how the driver handles DPI settings.
 * No other QMK compatible sensors have been tested so far. We expect most sensors to work fine with maccel, but there could always be unexpected driver/firmware related conflicts we are not aware of.
 * If you are using maccel successfully (or unsuccessfully) with a sensor that isn't listed here, we'd love to hear!
 
 **MCU compatibility:**
-Despite our initial worries about the extensive use of floating point operations likely not working well on AVR, it's been tested and works adequately.
+Despite our initial worries about the extensive use of floating point operations likely not working well on AVR, it's been tested and works adequately. However, firmware size might be an issue. Depending on what other QMK features you have enabled, you may need to make some compromises to fit maccel.
 
 It is currently unknown how the un-throttled polling when used with `POINTING_DEVICE_MOTION_PIN` would interact with the expensive calculations.
 
