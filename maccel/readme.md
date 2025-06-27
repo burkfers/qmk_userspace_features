@@ -1,3 +1,13 @@
+# THIS REPO IS OBSOLETE
+
+## @drashna has adapted maccel into a [QMK Community Module](https://docs.qmk.fm/features/community_modules) and brought it up to date with qmk `master`.
+## Please see https://github.com/drashna/qmk_modules/tree/main/pointing_device_accel
+Thank you, Drashna!
+
+# THIS REPO IS OBSOLETE
+m
+---
+---
 # Mouse acceleration
 
 This feature was born from the frustration of not having a tweakable acceleration curve that could work between OSes and hosts and be specific to one device, catalyzed by multiple users expressing interest.
